@@ -56,7 +56,8 @@ export function useMisPredicciones(userId) {
     const res = await fetch('/api/predicciones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, partidoId, golesLocal: local, golesVisitante: visitante }),
+      body: JSON.stringify({ userId, partidoId: partidoId.toString(), golesLocal: local, golesVisitante: visitante }),
+
     })
     const data = await res.json()
     setPredicciones(prev => {

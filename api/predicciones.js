@@ -12,9 +12,8 @@ export default async function handler(req, res) {
 
   // GET /api/predicciones?userId=xxx
   if (req.method === 'GET') {
-    const userId = decodeURIComponent(req.query.userId)
-
-    if (!userId) return res.status(400).json({ error: 'userId requerido' })
+   const userId = req.query.userId ? decodeURIComponent(req.query.userId) : null
+if (!userId) return res.status(400).json({ error: 'userId requerido' })
 
     try {
       const predicciones = await db

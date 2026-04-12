@@ -8,14 +8,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  const db = await conectarDB()
+  try {
+    const db = await conectarDB()
 
-  // GET /api/predicciones?userId=xxx
-  if (req.method === 'GET') {
-   const userId = req.query.userId ? decodeURIComponent(req.query.userId) : null
-if (!userId) return res.status(400).json({ error: 'userId requerido' })
+    if (req.method === 'GET') {
+      const userId = req.query.userId ? decodeURIComponent(req.query.userId) : null
+      if (!userId) return res.status(400).json({ error: 'userId requerido' })
 
-    try {
       const predicciones = await db
         .collection('predicciones')
         .aggregate([
@@ -34,35 +33,35 @@ if (!userId) return res.status(400).json({ error: 'userId requerido' })
         .toArray()
 
       return res.status(200).json(predicciones)
-    } catch (error) {
-      console.error(error)
-      return res.status(500).json({ error: 'Error al obtener predicciones' })
-    }
-  }
-
-  // POST /api/predicciones — crear o actualizar
-  if (req.method === 'POST') {
-    const { userId, partidoId, golesLocal, golesVisitante } = req.body
-
-    if (!userId || !partidoId || golesLocal === undefined || golesVisitante === undefined) {
-      return res.status(400).json({ error: 'Datos incompletos' })
     }
 
-    // Verificar que el partido no haya empezado
-    const partido = await db.collection('partidos').findOne({ _id: new ObjectId(partidoId) })
-    if (!partido) return res.status(404).json({ error: 'Partido no encontrado' })
+    if (req.method === 'POST') {
+      const { userId, partidoId, golesLocal, golesVisitante } = req.body
 
-    if (partido.estado !== 'NS') {
-      return res.status(400).json({ error: 'El partido ya empezó, no podés modificar tu prode' })
-    }
+      if (!userId || !partidoId || golesLocal === undefined || golesVisitante === undefined) {
+        return res.status(400).json({ error: 'Datos incompletos', body: req.body })
+      }
 
-    try {
+      let objectId
+      try {
+        objectId = new ObjectId(partidoId.toString())
+      } catch {
+        return res.status(400).json({ error: 'partidoId inválido', partidoId })
+      }
+
+      const partido = await db.collection('partidos').findOne({ _id: objectId })
+      if (!partido) return res.status(404).json({ error: 'Partido no encontrado', partidoId })
+
+      if (partido.estado !== 'NS') {
+        return res.status(400).json({ error: 'El partido ya empezó' })
+      }
+
       const resultado = await db.collection('predicciones').findOneAndUpdate(
-        { userId, partidoId: new ObjectId(partidoId) },
+        { userId, partidoId: objectId },
         {
           $set: {
             userId,
-            partidoId: new ObjectId(partidoId),
+            partidoId: objectId,
             golesLocal: parseInt(golesLocal),
             golesVisitante: parseInt(golesVisitante),
             updatedAt: new Date(),
@@ -73,11 +72,11 @@ if (!userId) return res.status(400).json({ error: 'userId requerido' })
       )
 
       return res.status(200).json(resultado)
-    } catch (error) {
-      console.error(error)
-      return res.status(500).json({ error: 'Error al guardar predicción' })
     }
-  }
 
-  return res.status(405).json({ error: 'Método no permitido' })
+    return res.status(405).json({ error: 'Método no permitido' })
+  } catch (error) {
+    console.error('Error en predicciones:', error)
+    return res.status(500).json({ error: error.message })
+  }
 }

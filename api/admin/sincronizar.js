@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   }
 
   const leagueId = req.body?.leagueId || 39
-  const season = req.body?.season || 2024
+  const season = req.body?.season || 2025
   const soloRecientes = req.body?.soloRecientes ?? true
 
   try {

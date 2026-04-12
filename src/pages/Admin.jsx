@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const LIGAS_TEST = [
-  { id: 39, nombre: "Premier League", bandera: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", season: 2024 },
-  { id: 140, nombre: "La Liga", bandera: "🇪🇸", season: 2024 },
-  { id: 2, nombre: "Champions League", bandera: "⭐", season: 2024 },
-  { id: 128, nombre: "Liga Argentina", bandera: "🇦🇷", season: 2024 },
-];
+  { id: 39, nombre: 'Premier League', bandera: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', season: 2025 },
+  { id: 140, nombre: 'La Liga', bandera: '🇪🇸', season: 2025 },
+  { id: 2, nombre: 'Champions League', bandera: '⭐', season: 2025 },
+  { id: 128, nombre: 'Liga Argentina', bandera: '🇦🇷', season: 2025 },
+]
 
 export default function Admin() {
   const { user, isAuthenticated } = useAuth0();

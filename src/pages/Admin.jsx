@@ -15,8 +15,7 @@ export default function Admin() {
   const [mensaje, setMensaje] = useState("");
   const [tipoMensaje, setTipoMensaje] = useState("ok");
 
-  const esAdmin = user?.email === import.meta.env.VITE_ADMIN_EMAIL;
-
+  const esAdmin = user?.email === "nikoagnello1@gmail.com";
   useEffect(() => {
     if (!esAdmin) return;
     fetch("/api/partidos")

@@ -32,8 +32,8 @@ export default async function handler(req, res) {
 
     const data = await response.json()
     console.log('API response:', JSON.stringify(data).slice(0, 500))
-console.log('Results count:', data.response?.length)
-console.log('Errors:', data.errors)
+    console.log('Results count:', data.response?.length)
+    console.log('Errors:', data.errors)
 
     if (!data.response || data.response.length === 0) {
       return res.status(200).json({ actualizados: 0, mensaje: 'No hay partidos disponibles aún' })
@@ -51,8 +51,8 @@ console.log('Errors:', data.errors)
             fixtureId: f.id,
             local: teams.home.name,
             visitante: teams.away.name,
-            banderaLocal: `https://media.api-sports.io/flags/${teams.home.id}.svg`,
-            banderaVisitante: `https://media.api-sports.io/flags/${teams.away.id}.svg`,
+            banderaLocal: teams.home.logo,
+banderaVisitante: teams.away.logo,
             fecha: new Date(f.date),
             estado: f.status.short,
             golesLocal: goals.home,

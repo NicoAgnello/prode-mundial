@@ -10,6 +10,7 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
   const [visitante, setVisitante] = useState(prediccion?.golesVisitante ?? 0);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
+  const [error, setError] = useState("");
 
   const yaJugo =
     partido.estado === "FT" ||
@@ -20,10 +21,24 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
 
   const handleGuardar = async () => {
     setGuardando(true);
-    await onGuardar(partido._id, parseInt(local), parseInt(visitante));
-    setGuardando(false);
-    setGuardado(true);
-    setTimeout(() => setGuardado(false), 2000);
+    setError("");
+    try {
+      const res = await onGuardar(
+        partido._id,
+        parseInt(local),
+        parseInt(visitante),
+      );
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        setGuardado(true);
+        setTimeout(() => setGuardado(false), 2000);
+      }
+    } catch {
+      setError("Error al guardar, intentá de nuevo");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const badgePuntos = () => {
@@ -137,7 +152,12 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 min="0"
                 max="20"
                 value={local}
-                onChange={(e) => setLocal(e.target.value)}
+                onChange={(e) =>
+                  setLocal(
+                    Math.max(0, Math.min(20, parseInt(e.target.value) || 0)),
+                  )
+                }
+                onBlur={(e) => setLocal(parseInt(e.target.value) || 0)}
                 style={styles.inputGol}
               />
               <span style={styles.guionInput}>-</span>
@@ -146,7 +166,12 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 min="0"
                 max="20"
                 value={visitante}
-                onChange={(e) => setVisitante(e.target.value)}
+                onChange={(e) =>
+                  setVisitante(
+                    Math.max(0, Math.min(20, parseInt(e.target.value) || 0)),
+                  )
+                }
+                onBlur={(e) => setVisitante(parseInt(e.target.value) || 0)}
                 style={styles.inputGol}
               />
               <button
@@ -166,6 +191,11 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                       : "Guardar"}
               </button>
             </div>
+            {error && (
+              <div style={{ color: "#ef4444", fontSize: 12, marginTop: 6 }}>
+                ⚠ {error}
+              </div>
+            )}
           </div>
         ) : (
           <span style={{ color: "var(--texto-secundario)", fontSize: 13 }}>

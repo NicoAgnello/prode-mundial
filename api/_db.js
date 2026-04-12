@@ -4,12 +4,12 @@ const uri = process.env.MONGODB_URI
 let client
 let clientPromise
 
-if (!uri) throw new Error('MONGODB_URI no está definido en las variables de entorno')
+if (!uri) throw new Error('MONGODB_URI no está definido')
 
 const options = {
   tls: true,
-  tlsAllowInvalidCertificates: false,
-  serverSelectionTimeoutMS: 5000,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
 }
 
 if (process.env.NODE_ENV === 'development') {

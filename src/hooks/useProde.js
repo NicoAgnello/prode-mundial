@@ -44,7 +44,7 @@ export function useMisPredicciones(userId) {
       setCargando(false)
       return
     }
-    fetch(`/api/predicciones?userId=${userId}`)
+    fetch(`/api/predicciones?userId=${encodeURIComponent(userId)}`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setPredicciones(data)

@@ -1,0 +1,114 @@
+:root {
+  --celeste: #74ACDF;
+  --celeste-dark: #4a8fc7;
+  --celeste-light: #e8f4fd;
+  --blanco: #FFFFFF;
+  --oro: #F6B40E;
+  --oro-dark: #d49a08;
+  --gris-oscuro: #1a1a2e;
+  --gris-medio: #2d2d4e;
+  --gris-suave: #f5f7fa;
+  --texto-principal: #0f172a;
+  --texto-secundario: #64748b;
+  --borde: #e2e8f0;
+  --sombra: 0 4px 24px rgba(116, 172, 223, 0.15);
+  --sombra-fuerte: 0 8px 40px rgba(116, 172, 223, 0.25);
+  --radio: 12px;
+  --radio-lg: 20px;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--gris-suave);
+  color: var(--texto-principal);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--celeste); border-radius: 3px; }
+
+/* Animaciones */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.fade-up {
+  animation: fadeUp 0.4s ease forwards;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Badge de puntos */
+.badge-puntos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--oro);
+  color: #7a5200;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+
+.badge-exacto {
+  background: #22c55e;
+  color: #fff;
+}
+
+.badge-ganador {
+  background: var(--celeste);
+  color: #fff;
+}
+
+.badge-error {
+  background: #f1f5f9;
+  color: var(--texto-secundario);
+}

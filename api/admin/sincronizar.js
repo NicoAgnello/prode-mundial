@@ -23,8 +23,9 @@ export default async function handler(req, res) {
     const db = await conectarDB()
 
     const url = soloRecientes
-  ? `https://v3.football.api-sports.io/fixtures?date=${new Date().toISOString().split('T')[0]}&last=10`
+  ? `https://v3.football.api-sports.io/fixtures?date=${new Date().toISOString().split('T')[0]}`
   : `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}`
+
     const response = await fetch(url, {
       headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY },
     })

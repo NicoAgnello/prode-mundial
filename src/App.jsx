@@ -8,6 +8,7 @@ import MisPredicciones from './pages/MisPredicciones'
 import Admin from './pages/Admin'
 import Cargando from './components/layout/Cargando'
 import { useRegistrarUsuario } from './hooks/useRegistrarUsuario'
+import Cuadro from './pages/Cuadro'
 
 export default function App() {
   const { isLoading } = useAuth0()
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/mis-predicciones" element={<MisPredicciones />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/cruces" element={<Cuadro />} />
       </Routes>
     </Layout>
   )

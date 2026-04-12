@@ -8,7 +8,10 @@ export function usePartidos() {
   useEffect(() => {
     fetch('/api/partidos')
       .then(r => r.json())
-      .then(data => setPartidos(data))
+      .then(data => {
+        if (Array.isArray(data)) setPartidos(data)
+        else setError('Error al cargar partidos')
+      })
       .catch(err => setError(err.message))
       .finally(() => setCargando(false))
   }, [])
@@ -23,7 +26,9 @@ export function useRanking() {
   useEffect(() => {
     fetch('/api/ranking')
       .then(r => r.json())
-      .then(data => setRanking(data))
+      .then(data => {
+        if (Array.isArray(data)) setRanking(data)
+      })
       .finally(() => setCargando(false))
   }, [])
 
@@ -35,10 +40,15 @@ export function useMisPredicciones(userId) {
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId) {
+      setCargando(false)
+      return
+    }
     fetch(`/api/predicciones?userId=${userId}`)
       .then(r => r.json())
-      .then(data => setPredicciones(data))
+      .then(data => {
+        if (Array.isArray(data)) setPredicciones(data)
+      })
       .finally(() => setCargando(false))
   }, [userId])
 

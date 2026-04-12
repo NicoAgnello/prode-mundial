@@ -1,29 +1,34 @@
 import conectarDB from '../_db.js'
 
-// ID del Mundial 2026 en API-Football
-const MUNDIAL_2026_ID = 1 // reemplazar con el ID real una vez que empiece el torneo
+// IDs de ligas útiles para testing:
+// 39  = Premier League
+// 140 = La Liga
+// 2   = Champions League
+// 128 = Copa de la Liga Argentina
+// 1   = Mundial FIFA (cuando esté disponible)
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
 
-  // Verificar que es admin (básico — en producción usar JWT)
   const adminKey = req.headers['x-admin-key']
   if (adminKey !== process.env.ADMIN_SECRET) {
     return res.status(403).json({ error: 'No autorizado' })
   }
 
+  const leagueId = req.body?.leagueId || 39
+  const season = req.body?.season || 2024
+  const soloRecientes = req.body?.soloRecientes ?? true
+
   try {
     const db = await conectarDB()
 
-    // Traer partidos de API-Football
-    const response = await fetch(
-      `https://v3.football.api-sports.io/fixtures?league=${MUNDIAL_2026_ID}&season=2026`,
-      {
-        headers: {
-          'x-apisports-key': process.env.API_FOOTBALL_KEY,
-        },
-      }
-    )
+    const url = soloRecientes
+      ? `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&status=FT&last=10`
+      : `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}`
+
+    const response = await fetch(url, {
+      headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY },
+    })
 
     const data = await response.json()
 
@@ -46,7 +51,7 @@ export default async function handler(req, res) {
             banderaLocal: `https://media.api-sports.io/flags/${teams.home.id}.svg`,
             banderaVisitante: `https://media.api-sports.io/flags/${teams.away.id}.svg`,
             fecha: new Date(f.date),
-            estado: f.status.short, // NS, 1H, HT, 2H, FT, etc.
+            estado: f.status.short,
             golesLocal: goals.home,
             golesVisitante: goals.away,
             grupo: league.round,
@@ -61,7 +66,7 @@ export default async function handler(req, res) {
       actualizados++
     }
 
-    return res.status(200).json({ actualizados, mensaje: `${actualizados} partidos sincronizados` })
+    return res.status(200).json({ actualizados, mensaje: `✓ ${actualizados} partidos sincronizados` })
   } catch (error) {
     console.error('Error sincronizando:', error)
     return res.status(500).json({ error: error.message })

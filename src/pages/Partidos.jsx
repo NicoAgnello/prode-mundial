@@ -2,20 +2,23 @@ import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { usePartidos, useMisPredicciones } from "../hooks/useProde";
 
+const esArgentina = (p) =>
+  p.local === "Argentina" || p.visitante === "Argentina";
+
 function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
-  const [local, setLocal] = useState(prediccion?.golesLocal ?? "");
-  const [visitante, setVisitante] = useState(prediccion?.golesVisitante ?? "");
+  const [local, setLocal] = useState(prediccion?.golesLocal ?? 0);
+  const [visitante, setVisitante] = useState(prediccion?.golesVisitante ?? 0);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
-  const yaJugo = partido.estado === "FT";
-  const enJuego =
-    partido.estado === "1H" ||
-    partido.estado === "2H" ||
-    partido.estado === "HT";
+  const yaJugo =
+    partido.estado === "FT" ||
+    partido.estado === "AET" ||
+    partido.estado === "PEN";
+  const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
+  const esArg = esArgentina(partido);
 
   const handleGuardar = async () => {
-    if (local === "" || visitante === "") return;
     setGuardando(true);
     await onGuardar(partido._id, parseInt(local), parseInt(visitante));
     setGuardando(false);
@@ -24,16 +27,37 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
   };
 
   const badgePuntos = () => {
-    if (!prediccion?.puntos && prediccion?.puntos !== 0) return null;
-    if (prediccion.puntos === 3)
-      return <span className="badge-puntos badge-exacto">⭐ 3 pts</span>;
-    if (prediccion.puntos === 1)
-      return <span className="badge-puntos badge-ganador">✓ 1 pt</span>;
-    return <span className="badge-puntos badge-error">0 pts</span>;
+    if (prediccion?.puntos === 3)
+      return (
+        <span
+          style={{ ...styles.badge, background: "#dcfce7", color: "#166534" }}
+        >
+          ⭐ 3 pts
+        </span>
+      );
+    if (prediccion?.puntos === 1)
+      return (
+        <span
+          style={{ ...styles.badge, background: "#dbeafe", color: "#1e40af" }}
+        >
+          ✓ 1 pt
+        </span>
+      );
+    if (prediccion?.puntos === 0)
+      return (
+        <span
+          style={{ ...styles.badge, background: "#f1f5f9", color: "#64748b" }}
+        >
+          0 pts
+        </span>
+      );
+    return null;
   };
 
   return (
-    <div style={styles.card}>
+    <div style={{ ...styles.card, ...(esArg ? styles.cardArgentina : {}) }}>
+      {esArg && <div style={styles.argBadge}>🇦🇷 Argentina</div>}
+
       <div style={styles.cardHeader}>
         <span style={styles.grupo}>{partido.grupo || partido.ronda}</span>
         <span style={styles.fecha}>
@@ -52,8 +76,11 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
           <img
             src={partido.banderaLocal}
             alt={partido.local}
-            style={{ width: 36, height: 36, objectFit: "contain" }}
-            onError={(e) => (e.target.style.display = "none")}
+            style={styles.bandera}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://flagcdn.com/w80/un.png";
+            }}
           />
           <span style={styles.nombreEquipo}>{partido.local}</span>
         </div>
@@ -61,9 +88,9 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
         <div style={styles.marcadorArea}>
           {yaJugo || enJuego ? (
             <div style={styles.resultado}>
-              <span style={styles.gol}>{partido.golesLocal}</span>
+              <span style={styles.gol}>{partido.golesLocal ?? "-"}</span>
               <span style={styles.guion}>-</span>
-              <span style={styles.gol}>{partido.golesVisitante}</span>
+              <span style={styles.gol}>{partido.golesVisitante ?? "-"}</span>
             </div>
           ) : (
             <span style={styles.vs}>VS</span>
@@ -74,14 +101,16 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
           <img
             src={partido.banderaVisitante}
             alt={partido.visitante}
-            style={{ width: 36, height: 36, objectFit: "contain" }}
-            onError={(e) => (e.target.style.display = "none")}
+            style={styles.bandera}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://flagcdn.com/w80/un.png";
+            }}
           />
           <span style={styles.nombreEquipo}>{partido.visitante}</span>
         </div>
       </div>
 
-      {/* Predicción */}
       <div style={styles.pronostico}>
         {yaJugo ? (
           <div style={styles.resultadoProde}>
@@ -95,7 +124,7 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
               </>
             ) : (
               <span style={{ color: "var(--texto-secundario)", fontSize: 13 }}>
-                No cargaste prode para este partido
+                No cargaste prode
               </span>
             )}
           </div>
@@ -110,7 +139,6 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 value={local}
                 onChange={(e) => setLocal(e.target.value)}
                 style={styles.inputGol}
-                placeholder="0"
               />
               <span style={styles.guionInput}>-</span>
               <input
@@ -120,11 +148,10 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 value={visitante}
                 onChange={(e) => setVisitante(e.target.value)}
                 style={styles.inputGol}
-                placeholder="0"
               />
               <button
                 onClick={handleGuardar}
-                disabled={guardando || local === "" || visitante === ""}
+                disabled={guardando}
                 style={{
                   ...styles.btnGuardar,
                   ...(guardado ? styles.btnGuardado : {}),
@@ -133,7 +160,7 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 {guardando
                   ? "..."
                   : guardado
-                    ? "✓ Guardado"
+                    ? "✓"
                     : prediccion
                       ? "Actualizar"
                       : "Guardar"}
@@ -142,7 +169,7 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
           </div>
         ) : (
           <span style={{ color: "var(--texto-secundario)", fontSize: 13 }}>
-            Iniciá sesión para cargar tu prode
+            Iniciá sesión para pronosticar
           </span>
         )}
       </div>
@@ -155,12 +182,22 @@ export default function Partidos() {
   const { partidos, cargando } = usePartidos();
   const { predicciones, guardar } = useMisPredicciones(user?.sub);
   const [filtro, setFiltro] = useState("todos");
+  const [grupo, setGrupo] = useState("todos");
+
+  const grupos = [
+    "todos",
+    ...new Set(partidos.map((p) => p.grupo).filter(Boolean)),
+  ];
 
   const partidosFiltrados = partidos.filter((p) => {
-    if (filtro === "proximos") return p.estado === "NS";
-    if (filtro === "jugados") return p.estado === "FT";
-    if (filtro === "en-vivo") return ["1H", "2H", "HT"].includes(p.estado);
-    return true;
+    const matchFiltro =
+      filtro === "todos" ||
+      (filtro === "proximos" && p.estado === "NS") ||
+      (filtro === "jugados" && (p.estado === "FT" || p.estado === "AET")) ||
+      (filtro === "en-vivo" && ["1H", "2H", "HT"].includes(p.estado)) ||
+      (filtro === "argentina" && esArgentina(p));
+    const matchGrupo = grupo === "todos" || p.grupo === grupo;
+    return matchFiltro && matchGrupo;
   });
 
   return (
@@ -171,8 +208,9 @@ export default function Partidos() {
           {[
             { key: "todos", label: "Todos" },
             { key: "proximos", label: "Próximos" },
-            { key: "en-vivo", label: "● En vivo" },
+            { key: "en-vivo", label: "● Vivo" },
             { key: "jugados", label: "Jugados" },
+            { key: "argentina", label: "🇦🇷 Argentina" },
           ].map((f) => (
             <button
               key={f.key}
@@ -188,23 +226,63 @@ export default function Partidos() {
         </div>
       </div>
 
+      {grupos.length > 2 && (
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            flexWrap: "wrap",
+            marginBottom: 16,
+          }}
+        >
+          {grupos.map((g) => (
+            <button
+              key={g}
+              onClick={() => setGrupo(g)}
+              style={{
+                ...styles.filtroBtn,
+                fontSize: 12,
+                padding: "4px 10px",
+                ...(grupo === g ? styles.filtroBtnActive : {}),
+              }}
+            >
+              {g === "todos" ? "Todos los grupos" : g}
+            </button>
+          ))}
+        </div>
+      )}
+
       {cargando ? (
-        <div style={styles.grid}>
+        <div style={styles.lista}>
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
               className="skeleton"
-              style={{ height: 180, borderRadius: 12 }}
+              style={{ height: 120, borderRadius: 12 }}
             />
           ))}
         </div>
+      ) : partidosFiltrados.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "48px 20px",
+            color: "var(--texto-secundario)",
+          }}
+        >
+          No hay partidos en esta categoría
+        </div>
       ) : (
-        <div style={styles.grid}>
+        <div style={styles.lista}>
           {partidosFiltrados.map((partido) => (
             <CardPartido
               key={partido._id}
               partido={partido}
-              prediccion={predicciones.find((p) => p.partidoId === partido._id)}
+              prediccion={predicciones.find(
+                (p) =>
+                  p.partidoId === partido._id?.toString() ||
+                  p.partidoId === partido._id,
+              )}
               onGuardar={guardar}
               puedeProde={isAuthenticated}
             />
@@ -218,11 +296,11 @@ export default function Partidos() {
 const styles = {
   pageHeader: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   pageTitle: {
     fontFamily: "var(--font-display)",
@@ -235,7 +313,7 @@ const styles = {
     background: "var(--blanco)",
     border: "1px solid var(--borde)",
     color: "var(--texto-secundario)",
-    padding: "6px 14px",
+    padding: "6px 12px",
     borderRadius: 8,
     fontSize: 13,
     cursor: "pointer",
@@ -247,23 +325,33 @@ const styles = {
     borderColor: "var(--celeste)",
     color: "var(--blanco)",
   },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: 16,
-  },
+  lista: { display: "flex", flexDirection: "column", gap: 10 },
   card: {
     background: "var(--blanco)",
     border: "1px solid var(--borde)",
-    borderRadius: "var(--radio-lg)",
-    padding: "16px",
-    transition: "box-shadow 0.2s",
+    borderRadius: 12,
+    padding: "14px 16px",
+  },
+  cardArgentina: {
+    borderLeft: "4px solid var(--oro)",
+    background: "#fffef5",
+  },
+  argBadge: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#92400e",
+    background: "#fef3c7",
+    padding: "2px 8px",
+    borderRadius: 6,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   cardHeader: {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
     flexWrap: "wrap",
   },
   grupo: {
@@ -288,7 +376,7 @@ const styles = {
     gridTemplateColumns: "1fr auto 1fr",
     alignItems: "center",
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   equipo: {
     display: "flex",
@@ -296,36 +384,40 @@ const styles = {
     alignItems: "flex-start",
     gap: 4,
   },
-  bandera: { fontSize: 28 },
+  bandera: {
+    width: 40,
+    height: 28,
+    objectFit: "cover",
+    borderRadius: 3,
+    border: "1px solid var(--borde)",
+  },
   nombreEquipo: {
     fontSize: 13,
     fontWeight: 600,
     color: "var(--texto-principal)",
+    lineHeight: 1.2,
   },
   marcadorArea: { textAlign: "center" },
   resultado: { display: "flex", alignItems: "center", gap: 4 },
   gol: {
     fontFamily: "var(--font-display)",
-    fontSize: 32,
+    fontSize: 30,
     color: "var(--texto-principal)",
-    minWidth: 28,
+    minWidth: 24,
     textAlign: "center",
   },
   guion: {
     fontFamily: "var(--font-display)",
-    fontSize: 28,
+    fontSize: 24,
     color: "var(--texto-secundario)",
   },
   vs: {
     fontFamily: "var(--font-display)",
-    fontSize: 20,
+    fontSize: 18,
     color: "var(--texto-secundario)",
     letterSpacing: 2,
   },
-  pronostico: {
-    borderTop: "1px solid var(--borde)",
-    paddingTop: 12,
-  },
+  pronostico: { borderTop: "1px solid var(--borde)", paddingTop: 10 },
   prodeLabel: {
     fontSize: 12,
     color: "var(--texto-secundario)",
@@ -339,14 +431,14 @@ const styles = {
     width: 44,
     height: 36,
     textAlign: "center",
-    border: "1px solid var(--borde)",
+    border: "1.5px solid var(--borde)",
     borderRadius: 8,
     fontSize: 16,
     fontWeight: 600,
     fontFamily: "var(--font-body)",
     outline: "none",
   },
-  guionInput: { fontSize: 20, color: "var(--texto-secundario)" },
+  guionInput: { fontSize: 18, color: "var(--texto-secundario)" },
   btnGuardar: {
     background: "var(--celeste)",
     color: "var(--blanco)",
@@ -359,7 +451,6 @@ const styles = {
     marginLeft: 4,
     transition: "all 0.2s",
   },
-  btnGuardado: {
-    background: "#22c55e",
-  },
+  btnGuardado: { background: "#22c55e" },
+  badge: { fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 600 },
 };

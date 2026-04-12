@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       }
 
       const partido = await db.collection('partidos').findOne({ _id: objectId })
-      if (!partido) return res.status(404).json({ error: 'Partido no encontrado', partidoId })
+      // if (!partido) return res.status(404).json({ error: 'Partido no encontrado', partidoId })
 
       if (partido.estado !== 'NS') {
         return res.status(400).json({ error: 'El partido ya empezó' })

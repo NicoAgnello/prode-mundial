@@ -366,7 +366,7 @@ const styles = {
   tabs: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 },
   tab: {
     background: "var(--blanco)",
-    border: "1px solid var(--borde)",
+    border: "1.5px solid #1a1a2e",
     color: "var(--texto-secundario)",
     padding: "6px 14px",
     borderRadius: 8,

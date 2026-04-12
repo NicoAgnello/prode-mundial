@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const LIGAS_TEST = [
-  { id: 39, nombre: 'Premier League', bandera: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', season: 2025 },
-  { id: 140, nombre: 'La Liga', bandera: '🇪🇸', season: 2025 },
-  { id: 2, nombre: 'Champions League', bandera: '⭐', season: 2025 },
-  { id: 128, nombre: 'Liga Argentina', bandera: '🇦🇷', season: 2025 },
-]
+  { id: 39, nombre: "Premier League", bandera: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", season: 2025 },
+  { id: 140, nombre: "La Liga", bandera: "🇪🇸", season: 2025 },
+  { id: 2, nombre: "Champions League", bandera: "⭐", season: 2025 },
+  { id: 128, nombre: "Liga Argentina", bandera: "🇦🇷", season: 2025 },
+];
 
 export default function Admin() {
   const { user, isAuthenticated } = useAuth0();
@@ -125,7 +125,23 @@ export default function Admin() {
           {mensaje}
         </div>
       )}
-
+      <button
+        style={{
+          ...styles.ligaBtn,
+          borderColor: "var(--celeste)",
+          marginBottom: 12,
+        }}
+        onClick={() => sincronizarLiga(39, 2025, true)}
+        disabled={sincronizando}
+      >
+        <span style={{ fontSize: 24 }}>📅</span>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>Partidos de hoy</div>
+          <div style={{ fontSize: 12, color: "var(--texto-secundario)" }}>
+            Todos los partidos de hoy
+          </div>
+        </div>
+      </button>
       <div style={styles.seccion}>
         <h2 style={styles.seccionTitulo}>🧪 TESTING — Ligas reales</h2>
         <p style={styles.seccionDesc}>

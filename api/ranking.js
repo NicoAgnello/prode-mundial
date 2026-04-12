@@ -28,7 +28,7 @@ export default async function handler(req, res) {
             as: 'usuario',
           },
         },
-        { $unwind: { path: '$usuario', preserveNullAndEmpty: true } },
+        { $unwind: { path: '$usuario', preserveNullAndEmptyArrays: true } },
         {
           $project: {
             _id: 0,

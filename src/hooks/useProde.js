@@ -6,14 +6,19 @@ export function usePartidos() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('/api/partidos')
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setPartidos(data)
-        else setError('Error al cargar partidos')
+    // Primero actualiza estados, después trae los partidos
+    fetch('/api/admin/actualizar-estados', { method: 'POST' })
+      .catch(() => {}) // si falla no importa, igual trae los partidos
+      .finally(() => {
+        fetch('/api/partidos')
+          .then(r => r.json())
+          .then(data => {
+            if (Array.isArray(data)) setPartidos(data)
+            else setError('Error al cargar partidos')
+          })
+          .catch(err => setError(err.message))
+          .finally(() => setCargando(false))
       })
-      .catch(err => setError(err.message))
-      .finally(() => setCargando(false))
   }, [])
 
   return { partidos, cargando, error }

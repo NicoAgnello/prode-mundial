@@ -27,7 +27,7 @@ export default async function handler(req, res) {
               as: 'partido',
             },
           },
-          { $unwind: { path: '$partido', preserveNullAndEmpty: true } },
+          { $unwind: { path: '$partido', preserveNullAndEmptyArrays: true } },
           { $sort: { 'partido.fecha': 1 } },
         ])
         .toArray()

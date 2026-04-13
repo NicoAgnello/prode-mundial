@@ -1,121 +1,23 @@
 import { useState, useEffect } from "react";
 
 const FASES = ["16avos", "Octavos", "Cuartos", "Semis", "Final"];
-
 const CRUCES_INICIALES = [
-  // 16avos de final — se definen cuando terminan los grupos
-  {
-    id: "r16_1",
-    fase: "16avos",
-    local: "1E",
-    visitante: "3A/B/C/D/F",
-    definido: false,
-  },
-  {
-    id: "r16_2",
-    fase: "16avos",
-    local: "1I",
-    visitante: "3C/D/F/G/H",
-    definido: false,
-  },
-  {
-    id: "r16_3",
-    fase: "16avos",
-    local: "2A",
-    visitante: "2B",
-    definido: false,
-  },
-  {
-    id: "r16_4",
-    fase: "16avos",
-    local: "1F",
-    visitante: "2C",
-    definido: false,
-  },
-  {
-    id: "r16_5",
-    fase: "16avos",
-    local: "2K",
-    visitante: "2L",
-    definido: false,
-  },
-  {
-    id: "r16_6",
-    fase: "16avos",
-    local: "1H",
-    visitante: "2J",
-    definido: false,
-  },
-  {
-    id: "r16_7",
-    fase: "16avos",
-    local: "1D",
-    visitante: "3B/E/F/I/J",
-    definido: false,
-  },
-  {
-    id: "r16_8",
-    fase: "16avos",
-    local: "1G",
-    visitante: "3A/E/H/I/J",
-    definido: false,
-  },
-  {
-    id: "r16_9",
-    fase: "16avos",
-    local: "1C",
-    visitante: "2F",
-    definido: false,
-  },
-  {
-    id: "r16_10",
-    fase: "16avos",
-    local: "2E",
-    visitante: "2I",
-    definido: false,
-  },
-  {
-    id: "r16_11",
-    fase: "16avos",
-    local: "1A",
-    visitante: "3C/E/F/H/I",
-    definido: false,
-  },
-  {
-    id: "r16_12",
-    fase: "16avos",
-    local: "1L",
-    visitante: "3E/H/I/J/K",
-    definido: false,
-  },
-  {
-    id: "r16_13",
-    fase: "16avos",
-    local: "1J",
-    visitante: "2H",
-    definido: false,
-  },
-  {
-    id: "r16_14",
-    fase: "16avos",
-    local: "2D",
-    visitante: "2G",
-    definido: false,
-  },
-  {
-    id: "r16_15",
-    fase: "16avos",
-    local: "1B",
-    visitante: "3E/F/G/I/J",
-    definido: false,
-  },
-  {
-    id: "r16_16",
-    fase: "16avos",
-    local: "1K",
-    visitante: "3D/E/I/J/L",
-    definido: false,
-  },
+  { id: "r16_1", fase: "16avos", local: "1E", visitante: "3A/B/C/D/F" },
+  { id: "r16_2", fase: "16avos", local: "1I", visitante: "3C/D/F/G/H" },
+  { id: "r16_3", fase: "16avos", local: "2A", visitante: "2B" },
+  { id: "r16_4", fase: "16avos", local: "1F", visitante: "2C" },
+  { id: "r16_5", fase: "16avos", local: "2K", visitante: "2L" },
+  { id: "r16_6", fase: "16avos", local: "1H", visitante: "2J" },
+  { id: "r16_7", fase: "16avos", local: "1D", visitante: "3B/E/F/I/J" },
+  { id: "r16_8", fase: "16avos", local: "1G", visitante: "3A/E/H/I/J" },
+  { id: "r16_9", fase: "16avos", local: "1C", visitante: "2F" },
+  { id: "r16_10", fase: "16avos", local: "2E", visitante: "2I" },
+  { id: "r16_11", fase: "16avos", local: "1A", visitante: "3C/E/F/H/I" },
+  { id: "r16_12", fase: "16avos", local: "1L", visitante: "3E/H/I/J/K" },
+  { id: "r16_13", fase: "16avos", local: "1J", visitante: "2H" },
+  { id: "r16_14", fase: "16avos", local: "2D", visitante: "2G" },
+  { id: "r16_15", fase: "16avos", local: "1B", visitante: "3E/F/G/I/J" },
+  { id: "r16_16", fase: "16avos", local: "1K", visitante: "3D/E/I/J/L" },
 ];
 
 function TarjetaCruce({ cruce }) {
@@ -222,10 +124,12 @@ export default function Cruces() {
           definido: true,
         }))
       : CRUCES_INICIALES;
-
   const crucesPorFase = {
     "16avos": crucesEliminatorias.filter(
-      (c) => c.fase === "16avos" || c.fase?.includes("16"),
+      (c) =>
+        c.fase === "16avos" ||
+        c.fase?.includes("Round of 32") ||
+        c.fase?.includes("16"),
     ),
     Octavos: crucesEliminatorias.filter(
       (c) =>

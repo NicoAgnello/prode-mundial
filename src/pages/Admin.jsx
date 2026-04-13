@@ -1,6 +1,79 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
+function GruposAdmin({ llamarPost, cargando }) {
+  const [grupos, setGrupos] = useState([]);
+  const [nombre, setNombre] = useState("");
+  const [codigo, setCodigo] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/usuarios", {
+      headers: { "x-admin-id": "" },
+    });
+    cargarGrupos();
+  }, []);
+
+  const cargarGrupos = () => {
+    fetch("/api/grupos?userId=admin", {}).catch(() => {});
+  };
+
+  return (
+    <div>
+      <div style={styles.infoBox}>
+        <strong>🔑 Grupos de participantes.</strong> Creá un código por grupo y
+        compartíselo a cada grupo de personas que quiera participar en su propio
+        ranking separado.
+      </div>
+
+      <div style={{ ...styles.card, marginBottom: 20 }}>
+        <div style={styles.cardTitulo}>Crear nuevo grupo</div>
+        <div style={styles.cardDesc}>
+          El código es lo que los usuarios van a ingresar para unirse. Usá algo
+          fácil de recordar y compartir.
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            marginTop: 8,
+          }}
+        >
+          <input
+            placeholder="Nombre del grupo (ej: Leibnitz 2026)"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            style={styles.select}
+          />
+          <input
+            placeholder="Código (ej: LEIBNITZ2026)"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+            maxLength={20}
+            style={{ ...styles.select, letterSpacing: 2, fontWeight: 700 }}
+          />
+          <button
+            style={styles.btn}
+            disabled={cargando || !nombre.trim() || !codigo.trim()}
+            onClick={() =>
+              llamarPost(
+                "/api/admin/acciones",
+                { action: "crear-grupo", nombre, codigo },
+                null,
+              ).then(() => {
+                setNombre("");
+                setCodigo("");
+              })
+            }
+          >
+            {cargando ? "Creando..." : "Crear grupo"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user, isAuthenticated } = useAuth0();
   const [partidos, setPartidos] = useState([]);
@@ -603,6 +676,9 @@ export default function Admin() {
             </div>
           </div>
         </div>
+      )}
+      {seccion === "grupos" && (
+        <GruposAdmin llamarPost={llamarPost} cargando={cargando} />
       )}
     </div>
   );

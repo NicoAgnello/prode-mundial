@@ -1,12 +1,10 @@
 import conectarDB from "../_db.js";
 
-// Mapeo de nombres API-Football → nombres en nuestra DB
+// Mapeo nombres openfootball → nombres en nuestra DB
 const NOMBRES_MAP = {
-  // América
   Mexico: "Mexico",
   "South Africa": "Sudafrica",
   "South Korea": "Corea del Sur",
-  "Korea Republic": "Corea del Sur",
   "Czech Republic": "Chequia",
   Czechia: "Chequia",
   Canada: "Canada",
@@ -18,8 +16,8 @@ const NOMBRES_MAP = {
   Morocco: "Marruecos",
   Haiti: "Haiti",
   Scotland: "Escocia",
-  "United States": "Estados Unidos",
   USA: "Estados Unidos",
+  "United States": "Estados Unidos",
   Paraguay: "Paraguay",
   Australia: "Australia",
   Turkey: "Turquia",
@@ -62,8 +60,20 @@ const NOMBRES_MAP = {
   Sweden: "Suecia",
   Serbia: "Serbia",
   Venezuela: "Venezuela",
+  "South Korea": "Corea del Sur",
 };
+
 const traducir = (nombre) => NOMBRES_MAP[nombre] || nombre;
+
+const inferirEstado = (partido, fechaPartido) => {
+  // Si tiene score → terminado
+  if (partido.score && partido.score.ft) return "FT";
+  // Si la fecha ya pasó pero no tiene score → puede estar en juego o sin datos aún
+  const ahora = new Date();
+  const fecha = new Date(fechaPartido);
+  if (fecha < ahora) return "NS"; // lo dejamos NS hasta que aparezca el score
+  return "NS";
+};
 
 export default async function handler(req, res) {
   if (req.method !== "POST")
@@ -74,40 +84,23 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "No autorizado" });
   }
 
-  if (!process.env.API_FOOTBALL_KEY) {
-    return res.status(500).json({ error: "API_FOOTBALL_KEY no configurada" });
-  }
-
-  const leagueId = parseInt(req.body?.leagueId) || 1;
-  const season = parseInt(req.body?.season) || 2026;
-  const soloRecientes = req.body?.soloRecientes ?? false;
-
   try {
     const db = await conectarDB();
 
-    const url = soloRecientes
-      ? `https://v3.football.api-sports.io/fixtures?date=${new Date().toISOString().split("T")[0]}`
-      : `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}`;
-
-    const response = await fetch(url, {
-      headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY },
-    });
+    // Fetch del JSON de openfootball — gratis, sin API key
+    const response = await fetch(
+      "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json",
+    );
 
     if (!response.ok) {
       return res
         .status(502)
-        .json({ error: `API-Football respondió con ${response.status}` });
+        .json({ error: "No se pudo obtener datos de openfootball" });
     }
 
     const data = await response.json();
 
-    if (data.errors && Object.keys(data.errors).length > 0) {
-      return res
-        .status(502)
-        .json({ error: "Error de API-Football", detalle: data.errors });
-    }
-
-    if (!data.response || data.response.length === 0) {
+    if (!data.matches || data.matches.length === 0) {
       return res
         .status(200)
         .json({ actualizados: 0, mensaje: "No hay partidos disponibles" });
@@ -115,14 +108,38 @@ export default async function handler(req, res) {
 
     let actualizados = 0;
     let nuevos = 0;
+    let sinMatch = 0;
 
-    for (const fixture of data.response) {
-      const { fixture: f, teams, goals, league } = fixture;
+    for (const match of data.matches) {
+      // Saltear partidos con equipos no definidos (playoffs pendientes)
+      if (!match.team1 || !match.team2) continue;
+      if (match.team1.includes("winner") || match.team2.includes("winner"))
+        continue;
+      if (match.team1.includes("Winner") || match.team2.includes("Winner"))
+        continue;
 
-      const localTraducido = traducir(teams.home.name);
-      const visitanteTraducido = traducir(teams.away.name);
+      const localTraducido = traducir(match.team1);
+      const visitanteTraducido = traducir(match.team2);
 
-      // Primero intentar matchear con partido existente por equipos
+      // Solo procesar si tiene score (partido terminado)
+      if (!match.score || !match.score.ft) {
+        sinMatch++;
+        continue;
+      }
+
+      const golesLocal = match.score.ft[0];
+      const golesVisitante = match.score.ft[1];
+
+      // Construir fecha desde date + time
+      let fecha = null;
+      try {
+        const timeStr = match.time?.split(" ")[0] || "00:00";
+        fecha = new Date(`${match.date}T${timeStr}:00`);
+      } catch {
+        fecha = new Date(match.date);
+      }
+
+      // Buscar partido existente por equipos
       const partidoExistente = await db.collection("partidos").findOne({
         local: localTraducido,
         visitante: visitanteTraducido,
@@ -130,17 +147,13 @@ export default async function handler(req, res) {
       });
 
       if (partidoExistente) {
-        // Actualizar partido existente con fixtureId y resultado
         await db.collection("partidos").updateOne(
           { _id: partidoExistente._id },
           {
             $set: {
-              fixtureId: f.id,
-              estado: f.status.short,
-              golesLocal: goals.home,
-              golesVisitante: goals.away,
-              banderaLocal: teams.home.logo,
-              banderaVisitante: teams.away.logo,
+              estado: "FT",
+              golesLocal,
+              golesVisitante,
               updatedAt: new Date(),
             },
           },
@@ -148,25 +161,31 @@ export default async function handler(req, res) {
         actualizados++;
       } else {
         // Partido nuevo (eliminatorias) — insertar
+        const grupo = match.group || match.round || "Eliminatorias";
         await db.collection("partidos").updateOne(
-          { fixtureId: f.id },
+          {
+            local: localTraducido,
+            visitante: visitanteTraducido,
+            esMundial: true,
+          },
           {
             $set: {
-              fixtureId: f.id,
               local: localTraducido,
               visitante: visitanteTraducido,
-              banderaLocal: teams.home.logo,
-              banderaVisitante: teams.away.logo,
-              fecha: new Date(f.date),
-              estado: f.status.short,
-              golesLocal: goals.home,
-              golesVisitante: goals.away,
-              grupo: league.round,
-              ronda: league.round,
+              fecha,
+              estado: "FT",
+              golesLocal,
+              golesVisitante,
+              grupo,
+              ronda: grupo,
               esMundial: true,
               updatedAt: new Date(),
             },
-            $setOnInsert: { createdAt: new Date() },
+            $setOnInsert: {
+              banderaLocal: `https://flagcdn.com/w80/un.png`,
+              banderaVisitante: `https://flagcdn.com/w80/un.png`,
+              createdAt: new Date(),
+            },
           },
           { upsert: true },
         );

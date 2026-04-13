@@ -6,63 +6,36 @@ export function usePartidos() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        // Solo actualizar estados si hay partidos con fixtureId (ya empezó el Mundial)
-        const res = await fetch("/api/partidos");
-        const data = await res.json();
-        if (!Array.isArray(data)) {
-          setError("Error al cargar partidos");
-          return;
-        }
-
-        // Solo llamar a actualizar-estados si hay partidos en juego o próximos con fixtureId
-        const tieneFixtureId = data.some((p) => p.fixtureId);
-        const hayEnJuego = data.some((p) =>
-          ["1H", "2H", "HT", "ET"].includes(p.estado),
-        );
-
-        if (tieneFixtureId && hayEnJuego) {
-          await fetch("/api/admin/actualizar-estados", {
-            method: "POST",
-          }).catch(() => {});
-          // Recargar después de actualizar
-          const res2 = await fetch("/api/partidos");
-          const data2 = await res2.json();
-          if (Array.isArray(data2)) setPartidos(data2);
-        } else {
-          setPartidos(data);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    cargar();
+    fetch("/api/partidos")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setPartidos(data);
+        else setError("Error al cargar partidos");
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setCargando(false));
   }, []);
 
   return { partidos, cargando, error };
 }
 export function useRanking(userId) {
-  const [ranking, setRanking] = useState([])
-  const [cargando, setCargando] = useState(true)
+  const [ranking, setRanking] = useState([]);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     if (!userId) {
-      setCargando(false)
-      return
+      setCargando(false);
+      return;
     }
     fetch(`/api/ranking?userId=${encodeURIComponent(userId)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) setRanking(data)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setRanking(data);
       })
-      .finally(() => setCargando(false))
-  }, [userId])
+      .finally(() => setCargando(false));
+  }, [userId]);
 
-  return { ranking, cargando }
+  return { ranking, cargando };
 }
 
 export function useMisPredicciones(userId) {

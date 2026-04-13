@@ -61,6 +61,13 @@ const NOMBRES_MAP = {
   Serbia: "Serbia",
   Venezuela: "Venezuela",
   "South Korea": "Corea del Sur",
+  // Playoffs ya resueltos — openfootball aún no actualizó estos nombres
+  "IC Path 1 winner": "RD Congo",
+  "IC Path 2 winner": "Iraq",
+  "UEFA Path A winner": "Bosnia",
+  "UEFA Path B winner": "Playoff F4",
+  "UEFA Path C winner": "Turquia",
+  "UEFA Path D winner": "Chequia",
 };
 
 const traducir = (nombre) => NOMBRES_MAP[nombre] || nombre;
@@ -113,13 +120,22 @@ export default async function handler(req, res) {
     for (const match of data.matches) {
       // Saltear partidos con equipos no definidos (playoffs pendientes)
       if (!match.team1 || !match.team2) continue;
-      if (match.team1.includes("winner") || match.team2.includes("winner"))
-        continue;
-      if (match.team1.includes("Winner") || match.team2.includes("Winner"))
-        continue;
 
+      // Traducir primero
       const localTraducido = traducir(match.team1);
       const visitanteTraducido = traducir(match.team2);
+
+      // Saltear solo si el equipo tiene "winner" y NO tiene traducción conocida
+      if (
+        localTraducido === match.team1 &&
+        match.team1.toLowerCase().includes("winner")
+      )
+        continue;
+      if (
+        visitanteTraducido === match.team2 &&
+        match.team2.toLowerCase().includes("winner")
+      )
+        continue;
 
       // Solo procesar si tiene score (partido terminado)
       if (!match.score || !match.score.ft) {

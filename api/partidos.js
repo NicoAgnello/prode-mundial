@@ -3,6 +3,8 @@ import conectarDB from './_db.js'
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' })
+
   try {
     const db = await conectarDB()
     const partidos = await db

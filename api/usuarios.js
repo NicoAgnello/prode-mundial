@@ -1,5 +1,7 @@
 import conectarDB from './_db.js'
 
+const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
 
@@ -7,6 +9,15 @@ export default async function handler(req, res) {
 
   if (!userId || !email) {
     return res.status(400).json({ error: 'userId y email requeridos' })
+  }
+  if (userId.length > 100) {
+    return res.status(400).json({ error: 'userId inválido' })
+  }
+  if (!validarEmail(email)) {
+    return res.status(400).json({ error: 'Email inválido' })
+  }
+  if (nombre && nombre.length > 100) {
+    return res.status(400).json({ error: 'Nombre demasiado largo' })
   }
 
   try {

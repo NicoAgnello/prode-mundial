@@ -11,8 +11,12 @@ export default async function handler(req, res) {
   try {
     const db = await conectarDB()
     const result = await db.collection('partidos').deleteMany({})
-    return res.status(200).json({ eliminados: result.deletedCount })
+    return res.status(200).json({
+      eliminados: result.deletedCount,
+      mensaje: `✓ ${result.deletedCount} partidos eliminados`
+    })
   } catch (error) {
-    return res.status(500).json({ error: error.message })
+    console.error('Error limpiando partidos:', error)
+    return res.status(500).json({ error: 'Error interno del servidor' })
   }
 }

@@ -39,12 +39,13 @@ export default function Home() {
 
         {/* Decorativo */}
         <div style={styles.decorativo} className="hero-decorativo">
-  <img
-    src="/wc2026.png"
-    alt="FIFA World Cup 2026"
-    style={{ width: 180, height: 180, objectFit: 'contain' }}
-  />
-</div>
+          <img
+            src="/wc2026.png"
+            alt="FIFA World Cup 2026"
+            style={{ width: 180, height: 180, objectFit: "contain" }}
+          />
+        </div>
+      </div>{" "}
 
       {/* Stats rápidas */}
       <div style={styles.statsGrid}>
@@ -60,7 +61,6 @@ export default function Home() {
           </div>
         ))}
       </div>
-
       {/* Como funciona */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>¿CÓMO FUNCIONA?</h2>

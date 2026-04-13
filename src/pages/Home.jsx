@@ -42,11 +42,13 @@ export default function Home() {
           <img
             src="/wc2026.png"
             alt="FIFA World Cup 2026"
-            style={{
-              width: 220,
-              height: 220,
-              objectFit: "contain",
-            }}
+            style={{ 
+  width: 220, 
+  height: 220, 
+  objectFit: 'contain',
+  mixBlendMode: 'luminosity',
+  opacity: 0.9,
+}}
           />
         </div>
       </div>{" "}

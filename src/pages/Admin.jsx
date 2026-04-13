@@ -1,21 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-function GruposAdmin({ llamarPost, cargando }) {
-  const [grupos, setGrupos] = useState([]);
+function GruposAdmin({ llamarPost, cargando, userId }) {
   const [nombre, setNombre] = useState("");
   const [codigo, setCodigo] = useState("");
-
-  useEffect(() => {
-    fetch("/api/admin/usuarios", {
-      headers: { "x-admin-id": "" },
-    });
-    cargarGrupos();
-  }, []);
-
-  const cargarGrupos = () => {
-    fetch("/api/grupos?userId=admin", {}).catch(() => {});
-  };
 
   return (
     <div>
@@ -55,16 +43,15 @@ function GruposAdmin({ llamarPost, cargando }) {
           <button
             style={styles.btn}
             disabled={cargando || !nombre.trim() || !codigo.trim()}
-            onClick={() =>
+            onClick={() => {
               llamarPost(
                 "/api/admin/acciones",
                 { action: "crear-grupo", nombre, codigo },
                 null,
-              ).then(() => {
-                setNombre("");
-                setCodigo("");
-              })
-            }
+              );
+              setNombre("");
+              setCodigo("");
+            }}
           >
             {cargando ? "Creando..." : "Crear grupo"}
           </button>
@@ -187,6 +174,7 @@ export default function Admin() {
           { key: "usuarios", label: `👥 Usuarios (${usuarios.length})` },
           { key: "partidos", label: `⚽ Partidos (${partidos.length})` },
           { key: "utilidades", label: "🔧 Utilidades" },
+          { key: "grupos", label: "🔑 Grupos" },
         ].map((t) => (
           <button
             key={t.key}
@@ -678,7 +666,11 @@ export default function Admin() {
         </div>
       )}
       {seccion === "grupos" && (
-        <GruposAdmin llamarPost={llamarPost} cargando={cargando} />
+        <GruposAdmin
+          llamarPost={llamarPost}
+          cargando={cargando}
+          userId={user.sub}
+        />
       )}
     </div>
   );

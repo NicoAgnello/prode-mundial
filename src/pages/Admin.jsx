@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-const ADMIN_KEY = "prode2026secret";
-
 export default function Admin() {
   const { user, isAuthenticated } = useAuth0();
   const [partidos, setPartidos] = useState([]);
@@ -31,7 +29,10 @@ export default function Admin() {
   };
 
   const cargarUsuarios = () => {
-    fetch("/api/admin/usuarios", { headers: { "x-admin-key": ADMIN_KEY } })
+    fetch("/api/admin/usuarios", {
+      method: "GET",
+      headers: { "x-admin-id": user?.sub || "" },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setUsuarios(data);
@@ -50,11 +51,8 @@ export default function Admin() {
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-key": ADMIN_KEY,
-        },
-        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, userId: user.sub }),
       });
       const data = await res.json();
       mostrarMensaje(data.mensaje || data.error, res.ok ? "ok" : "error");
@@ -66,18 +64,16 @@ export default function Admin() {
       setCargando(false);
     }
   };
-
   const verPrediccionesPartido = async () => {
     if (!partidoSeleccionado) return;
     const res = await fetch(
       `/api/admin/predicciones-partido?partidoId=${partidoSeleccionado}`,
-      { headers: { "x-admin-key": ADMIN_KEY } },
+      { headers: { "x-admin-id": user?.sub || "" } },
     );
     const data = await res.json();
     if (Array.isArray(data)) setPrediccionesPartido(data);
     else mostrarMensaje(data.error, "error");
   };
-
   if (!isAuthenticated || !esAdmin) {
     return (
       <div style={styles.centrado}>

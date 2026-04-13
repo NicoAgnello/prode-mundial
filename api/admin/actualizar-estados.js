@@ -4,14 +4,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
 
   if (!process.env.API_FOOTBALL_KEY) {
-    return res.status(500).json({ error: 'API_FOOTBALL_KEY no configurada' })
+    return res.status(200).json({ actualizados: 0, mensaje: 'API key no configurada' })
   }
 
   try {
     const db = await conectarDB()
 
-    // Solo actualizar partidos que tienen fixtureId (sincronizados con API-Football)
-    // Los hardcodeados del Mundial no tienen fixtureId hasta que empiece el torneo
     const partidos = await db.collection('partidos')
       .find({
         fixtureId: { $exists: true, $ne: null },
@@ -24,7 +22,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ actualizados: 0, mensaje: 'No hay partidos para actualizar' })
     }
 
-    // API-Football acepta máximo 20 IDs por request
     const ids = partidos.slice(0, 20).map(p => p.fixtureId).join('-')
     const url = `https://v3.football.api-sports.io/fixtures?ids=${ids}`
 
@@ -33,13 +30,12 @@ export default async function handler(req, res) {
     })
 
     if (!response.ok) {
-      return res.status(502).json({ error: `API-Football respondió con ${response.status}` })
+      return res.status(200).json({ actualizados: 0 })
     }
 
     const data = await response.json()
-
     if (!data.response?.length) {
-      return res.status(200).json({ actualizados: 0, mensaje: 'Sin datos de la API' })
+      return res.status(200).json({ actualizados: 0 })
     }
 
     let actualizados = 0
@@ -59,12 +55,9 @@ export default async function handler(req, res) {
       actualizados++
     }
 
-    return res.status(200).json({
-      actualizados,
-      mensaje: `✓ ${actualizados} estados actualizados`
-    })
+    return res.status(200).json({ actualizados, mensaje: `✓ ${actualizados} estados actualizados` })
   } catch (error) {
     console.error('Error actualizando estados:', error)
-    return res.status(500).json({ error: 'Error interno del servidor' })
+    return res.status(200).json({ actualizados: 0 })
   }
 }

@@ -3,10 +3,10 @@ import conectarDB from '../_db.js'
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' })
 
-  const adminKey = req.headers['x-admin-key']
-  if (adminKey !== process.env.ADMIN_SECRET) {
-    return res.status(403).json({ error: 'No autorizado' })
-  }
+  const adminId = req.headers['x-admin-id'] || req.body?.userId
+if (adminId !== process.env.ADMIN_USER_ID) {
+  return res.status(403).json({ error: 'No autorizado' })
+}
 
   try {
     const db = await conectarDB()

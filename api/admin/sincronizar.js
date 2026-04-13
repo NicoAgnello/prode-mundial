@@ -25,10 +25,10 @@ const traducir = nombre => NOMBRES_MAP[nombre] || nombre
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
 
-  const adminKey = req.headers['x-admin-key']
-  if (adminKey !== process.env.ADMIN_SECRET) {
-    return res.status(403).json({ error: 'No autorizado' })
-  }
+  const adminId = req.headers['x-admin-id'] || req.body?.userId
+if (adminId !== process.env.ADMIN_USER_ID) {
+  return res.status(403).json({ error: 'No autorizado' })
+}
 
   if (!process.env.API_FOOTBALL_KEY) {
     return res.status(500).json({ error: 'API_FOOTBALL_KEY no configurada' })

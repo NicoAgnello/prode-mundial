@@ -171,6 +171,27 @@ export default async function handler(req, res) {
         mensaje: `✓ Grupo reseteado para ${usuario.nombre || usuario.email}. El usuario podrá ingresar un nuevo código.`,
       });
     }
+    if (action === "listar-grupos") {
+      const grupos = await db.collection("grupos").find({}).toArray();
+
+      // Para cada grupo contar cuántos usuarios tiene
+      const gruposConStats = await Promise.all(
+        grupos.map(async (g) => {
+          const miembros = await db
+            .collection("usuarios")
+            .countDocuments({ grupoId: g._id });
+          return {
+            _id: g._id,
+            nombre: g.nombre,
+            codigo: g.codigo,
+            creadoAt: g.creadoAt,
+            miembros,
+          };
+        }),
+      );
+
+      return res.status(200).json({ grupos: gruposConStats });
+    }
     return res.status(400).json({ error: `Acción desconocida: ${action}` });
   } catch (error) {
     console.error("Error en acciones admin:", error);

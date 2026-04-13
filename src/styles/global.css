@@ -115,3 +115,8 @@ a {
 button {
   outline: none;
 }
+@media (max-width: 600px) {
+  .hero-decorativo {
+    display: none;
+  }
+}

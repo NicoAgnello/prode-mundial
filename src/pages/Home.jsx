@@ -38,7 +38,7 @@ export default function Home() {
         </div>
 
         {/* Decorativo */}
-        <div style={styles.decorativo}>
+        <div style={styles.decorativo} className="hero-decorativo">
           <div style={styles.pelota}>⚽</div>
           <div style={styles.decorativoLabel}>MEXICO · USA · CANADA</div>
         </div>
@@ -256,5 +256,15 @@ const styles = {
     fontSize: 13,
     color: "var(--texto-secundario)",
     lineHeight: 1.6,
+  },
+  decorativo: {
+    position: "relative",
+    zIndex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    flexShrink: 0,
+    "@media (max-width: 480px)": { display: "none" }, // esto no funciona en inline styles
   },
 };

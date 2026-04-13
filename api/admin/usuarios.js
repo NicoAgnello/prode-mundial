@@ -35,6 +35,7 @@ if (adminId !== process.env.ADMIN_USER_ID) {
         lastLogin: u.lastLogin,
         totalPredicciones,
         puntos: puntos[0]?.total || 0,
+        grupoNombre: u.grupoNombre || '—', 
       }
     }))
 

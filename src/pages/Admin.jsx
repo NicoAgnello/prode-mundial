@@ -4,6 +4,39 @@ import { useAuth0 } from "@auth0/auth0-react";
 function GruposAdmin({ llamarPost, cargando, userId }) {
   const [nombre, setNombre] = useState("");
   const [codigo, setCodigo] = useState("");
+  const [grupos, setGrupos] = useState([]);
+  const [cargandoGrupos, setCargandoGrupos] = useState(true);
+
+  useEffect(() => {
+    cargarGrupos();
+  }, []);
+
+  const cargarGrupos = async () => {
+    setCargandoGrupos(true);
+    try {
+      const res = await fetch("/api/admin/acciones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "listar-grupos", userId }),
+      });
+      const data = await res.json();
+      if (data.grupos) setGrupos(data.grupos);
+    } catch {
+    } finally {
+      setCargandoGrupos(false);
+    }
+  };
+
+  const crearGrupo = async () => {
+    await llamarPost(
+      "/api/admin/acciones",
+      { action: "crear-grupo", nombre, codigo },
+      null,
+    );
+    setNombre("");
+    setCodigo("");
+    cargarGrupos();
+  };
 
   return (
     <div>
@@ -13,11 +46,12 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
         ranking separado.
       </div>
 
+      {/* Crear grupo */}
       <div style={{ ...styles.card, marginBottom: 20 }}>
         <div style={styles.cardTitulo}>Crear nuevo grupo</div>
         <div style={styles.cardDesc}>
           El código es lo que los usuarios van a ingresar para unirse. Usá algo
-          fácil de recordar y compartir.
+          fácil de recordar.
         </div>
         <div
           style={{
@@ -28,13 +62,13 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
           }}
         >
           <input
-            placeholder="Nombre del grupo (ej: LosAces)"
+            placeholder="Nombre del grupo (ej: Leibnitz 2026)"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.select}
           />
           <input
-            placeholder="Código (ej: aces123)"
+            placeholder="Código (ej: LEIBNITZ2026)"
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
             maxLength={20}
@@ -43,20 +77,79 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
           <button
             style={styles.btn}
             disabled={cargando || !nombre.trim() || !codigo.trim()}
-            onClick={() => {
-              llamarPost(
-                "/api/admin/acciones",
-                { action: "crear-grupo", nombre, codigo },
-                null,
-              );
-              setNombre("");
-              setCodigo("");
-            }}
+            onClick={crearGrupo}
           >
             {cargando ? "Creando..." : "Crear grupo"}
           </button>
         </div>
       </div>
+
+      {/* Lista de grupos */}
+      <div style={styles.cardTitulo}>Grupos existentes</div>
+      <p style={{ ...styles.seccionDesc, marginTop: 4 }}>
+        Estos son los grupos creados. Compartí el código con cada grupo de
+        participantes.
+      </p>
+      {cargandoGrupos ? (
+        <div style={{ color: "var(--texto-secundario)", fontSize: 13 }}>
+          Cargando grupos...
+        </div>
+      ) : grupos.length === 0 ? (
+        <div style={styles.vacio}>No hay grupos creados todavía</div>
+      ) : (
+        <div style={styles.tablaWrapper}>
+          <table style={styles.tabla}>
+            <thead>
+              <tr>
+                {["Nombre", "Código", "Miembros", "Creado"].map((h) => (
+                  <th key={h} style={styles.th}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grupos.map((g) => (
+                <tr key={g._id} style={styles.tr}>
+                  <td style={styles.td}>
+                    <strong>{g.nombre}</strong>
+                  </td>
+                  <td style={styles.td}>
+                    <span
+                      style={{
+                        fontFamily: "monospace",
+                        fontWeight: 700,
+                        letterSpacing: 2,
+                        fontSize: 13,
+                        background: "var(--celeste-light)",
+                        color: "var(--celeste-dark)",
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                      }}
+                    >
+                      {g.codigo}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    <span style={{ fontWeight: 600 }}>{g.miembros}</span>
+                    <span
+                      style={{ color: "var(--texto-secundario)", fontSize: 12 }}
+                    >
+                      {" "}
+                      usuarios
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    {g.creadoAt
+                      ? new Date(g.creadoAt).toLocaleDateString("es-AR")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -323,6 +416,7 @@ export default function Admin() {
                     {[
                       "Usuario",
                       "Email",
+                      "Grupo",
                       "Prodes",
                       "Puntos",
                       "Último acceso",
@@ -362,6 +456,26 @@ export default function Admin() {
                         </div>
                       </td>
                       <td style={styles.td}>{u.email}</td>
+                      <td style={styles.td}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color:
+                              u.grupoNombre === "—"
+                                ? "var(--texto-secundario)"
+                                : "var(--celeste-dark)",
+                            background:
+                              u.grupoNombre === "—"
+                                ? "#f1f5f9"
+                                : "var(--celeste-light)",
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                          }}
+                        >
+                          {u.grupoNombre}
+                        </span>
+                      </td>
                       <td style={styles.td}>{u.totalPredicciones}</td>
                       <td style={styles.td}>
                         <strong style={{ color: "var(--celeste-dark)" }}>

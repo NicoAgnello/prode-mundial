@@ -65,7 +65,7 @@ const NOMBRES_MAP = {
   "IC Path 1 winner": "RD Congo",
   "IC Path 2 winner": "Iraq",
   "UEFA Path A winner": "Bosnia",
-  "UEFA Path B winner": "Playoff F4",
+  "UEFA Path B winner": "Suecia",
   "UEFA Path C winner": "Turquia",
   "UEFA Path D winner": "Chequia",
 };

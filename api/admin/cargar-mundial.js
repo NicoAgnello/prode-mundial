@@ -291,10 +291,11 @@ const PARTIDOS_MUNDIAL = [
   {
     grupo: "Grupo F",
     local: "Tunisia",
-    visitante: "Playoff F4",
+    visitante: "Suecia",
     fecha: "2026-06-15T03:00:00",
     sede: "Guadalajara",
   },
+
   {
     grupo: "Grupo F",
     local: "Japon",
@@ -305,14 +306,14 @@ const PARTIDOS_MUNDIAL = [
   {
     grupo: "Grupo F",
     local: "Holanda",
-    visitante: "Playoff F4",
+    visitante: "Suecia",
     fecha: "2026-06-21T03:00:00",
     sede: "San Francisco",
   },
   {
     grupo: "Grupo F",
     local: "Japon",
-    visitante: "Playoff F4",
+    visitante: "Suecia",
     fecha: "2026-06-27T02:00:00",
     sede: "San Francisco",
   },

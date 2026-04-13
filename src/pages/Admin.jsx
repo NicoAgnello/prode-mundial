@@ -13,7 +13,6 @@ export default function Admin() {
   const [seccion, setSeccion] = useState("principal");
   const [partidoSeleccionado, setPartidoSeleccionado] = useState("");
   const [prediccionesPartido, setPrediccionesPartido] = useState([]);
-  const [usuarioABorrar, setUsuarioABorrar] = useState("");
 
   const esAdmin = user?.email === "nikoagnello1@gmail.com";
 
@@ -32,9 +31,7 @@ export default function Admin() {
   };
 
   const cargarUsuarios = () => {
-    fetch("/api/admin/usuarios", {
-      headers: { "x-admin-key": ADMIN_KEY },
-    })
+    fetch("/api/admin/usuarios", { headers: { "x-admin-key": ADMIN_KEY } })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setUsuarios(data);
@@ -74,9 +71,7 @@ export default function Admin() {
     if (!partidoSeleccionado) return;
     const res = await fetch(
       `/api/admin/predicciones-partido?partidoId=${partidoSeleccionado}`,
-      {
-        headers: { "x-admin-key": ADMIN_KEY },
-      },
+      { headers: { "x-admin-key": ADMIN_KEY } },
     );
     const data = await res.json();
     if (Array.isArray(data)) setPrediccionesPartido(data);
@@ -117,7 +112,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Tabs de secciones */}
       <div style={styles.tabs}>
         {[
           { key: "principal", label: "⚙️ Principal" },
@@ -138,7 +132,7 @@ export default function Admin() {
         ))}
       </div>
 
-      {/* SECCIÓN PRINCIPAL */}
+      {/* PRINCIPAL */}
       {seccion === "principal" && (
         <div>
           <div style={styles.infoBox}>
@@ -157,7 +151,6 @@ export default function Admin() {
               <li>Recalculá puntos para actualizar el ranking</li>
             </ol>
           </div>
-
           <div style={styles.grid}>
             <div style={styles.card}>
               <div style={styles.cardIcono}>⚽</div>
@@ -173,14 +166,14 @@ export default function Admin() {
               </div>
               <button
                 style={styles.btn}
+                disabled={cargando}
                 onClick={() =>
                   llamarPost(
                     "/api/admin/cargar-mundial",
                     {},
-                    "¿Cargar los partidos del Mundial? Esto va a borrar los partidos de prueba actuales.",
+                    "¿Cargar los partidos del Mundial? Esto va a borrar los partidos actuales.",
                   )
                 }
-                disabled={cargando}
               >
                 {cargando ? "Cargando..." : "Cargar partidos"}
               </button>
@@ -196,6 +189,7 @@ export default function Admin() {
               </div>
               <button
                 style={styles.btn}
+                disabled={cargando}
                 onClick={() =>
                   llamarPost("/api/admin/sincronizar", {
                     leagueId: 1,
@@ -203,7 +197,6 @@ export default function Admin() {
                     soloRecientes: false,
                   })
                 }
-                disabled={cargando}
               >
                 {cargando ? "Sincronizando..." : "Sincronizar"}
               </button>
@@ -218,8 +211,10 @@ export default function Admin() {
               </div>
               <button
                 style={styles.btn}
-                onClick={() => llamarPost("/api/admin/recalcular")}
                 disabled={cargando}
+                onClick={() =>
+                  llamarPost("/api/admin/acciones", { action: "recalcular" })
+                }
               >
                 {cargando ? "Calculando..." : "Recalcular"}
               </button>
@@ -238,14 +233,14 @@ export default function Admin() {
               </div>
               <button
                 style={{ ...styles.btn, background: "#ef4444" }}
+                disabled={cargando}
                 onClick={() =>
                   llamarPost(
-                    "/api/admin/limpiar",
-                    {},
+                    "/api/admin/acciones",
+                    { action: "limpiar-partidos" },
                     "¿Seguro? Esto borra TODOS los partidos y es irreversible.",
                   )
                 }
-                disabled={cargando}
               >
                 Limpiar todo
               </button>
@@ -254,7 +249,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* SECCIÓN USUARIOS */}
+      {/* USUARIOS */}
       {seccion === "usuarios" && (
         <div>
           <p style={styles.seccionDesc}>
@@ -330,8 +325,11 @@ export default function Admin() {
                           }}
                           onClick={() =>
                             llamarPost(
-                              "/api/admin/limpiar-predicciones",
-                              { userId: u.userId },
+                              "/api/admin/acciones",
+                              {
+                                action: "limpiar-predicciones",
+                                userId: u.userId,
+                              },
                               `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`,
                             )
                           }
@@ -348,15 +346,13 @@ export default function Admin() {
         </div>
       )}
 
-      {/* SECCIÓN PARTIDOS */}
+      {/* PARTIDOS */}
       {seccion === "partidos" && (
         <div>
           <p style={styles.seccionDesc}>
             Lista de partidos en la base de datos. Los partidos con fondo
             amarillo son de Argentina.
           </p>
-
-          {/* Ver predicciones de un partido */}
           <div
             style={{
               ...styles.card,
@@ -399,7 +395,6 @@ export default function Admin() {
                 Ver predicciones
               </button>
             </div>
-
             {prediccionesPartido.length > 0 && (
               <div style={styles.tablaWrapper}>
                 <table style={styles.tabla}>
@@ -476,8 +471,6 @@ export default function Admin() {
               </p>
             )}
           </div>
-
-          {/* Tabla de partidos */}
           {partidos.length === 0 ? (
             <div style={styles.vacio}>
               No hay partidos — usá "Cargar Mundial 2026" en la sección
@@ -550,7 +543,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* SECCIÓN UTILIDADES */}
+      {/* UTILIDADES */}
       {seccion === "utilidades" && (
         <div>
           <div style={styles.infoBox}>
@@ -558,15 +551,12 @@ export default function Admin() {
             Usálas solo si hay un problema específico con un usuario o con los
             puntos.
           </div>
-
           <div style={styles.grid}>
             <div style={{ ...styles.card, borderTop: "3px solid #f59e0b" }}>
               <div style={styles.cardIcono}>🔁</div>
               <div style={styles.cardTitulo}>Resetear todos los puntos</div>
               <div style={styles.cardDesc}>
                 Pone todos los puntos en null para poder recalcular desde cero.
-                Útil si hubo un error en el recálculo o si cambiaron las reglas
-                de puntaje.
                 <strong
                   style={{ color: "#92400e", display: "block", marginTop: 4 }}
                 >
@@ -576,14 +566,14 @@ export default function Admin() {
               </div>
               <button
                 style={{ ...styles.btn, background: "#f59e0b" }}
+                disabled={cargando}
                 onClick={() =>
                   llamarPost(
-                    "/api/admin/resetear-puntos",
-                    {},
+                    "/api/admin/acciones",
+                    { action: "resetear-puntos" },
                     "¿Resetear todos los puntos? Después tenés que recalcular manualmente.",
                   )
                 }
-                disabled={cargando}
               >
                 {cargando ? "Reseteando..." : "Resetear puntos"}
               </button>
@@ -603,14 +593,14 @@ export default function Admin() {
               </div>
               <button
                 style={{ ...styles.btn, background: "#ef4444" }}
+                disabled={cargando}
                 onClick={() =>
                   llamarPost(
-                    "/api/admin/limpiar-predicciones",
-                    {},
+                    "/api/admin/acciones",
+                    { action: "limpiar-predicciones" },
                     "¿Borrar TODAS las predicciones de TODOS los usuarios? Esto es irreversible.",
                   )
                 }
-                disabled={cargando}
               >
                 {cargando ? "Borrando..." : "Borrar todo"}
               </button>

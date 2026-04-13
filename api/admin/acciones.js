@@ -1,0 +1,102 @@
+import conectarDB from '../_db.js'
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' })
+
+  const adminKey = req.headers['x-admin-key']
+  if (adminKey !== process.env.ADMIN_SECRET) {
+    return res.status(403).json({ error: 'No autorizado' })
+  }
+
+  const { action, userId } = req.body
+  if (!action) return res.status(400).json({ error: 'action requerida' })
+
+  try {
+    const db = await conectarDB()
+
+    // Limpiar partidos
+    if (action === 'limpiar-partidos') {
+      const result = await db.collection('partidos').deleteMany({})
+      return res.status(200).json({
+        eliminados: result.deletedCount,
+        mensaje: `✓ ${result.deletedCount} partidos eliminados`
+      })
+    }
+
+    // Limpiar predicciones (de un usuario o todas)
+    if (action === 'limpiar-predicciones') {
+      const filtro = userId ? { userId } : {}
+      const result = await db.collection('predicciones').deleteMany(filtro)
+      return res.status(200).json({
+        eliminadas: result.deletedCount,
+        mensaje: userId
+          ? `✓ ${result.deletedCount} predicciones eliminadas para el usuario`
+          : `✓ ${result.deletedCount} predicciones eliminadas en total`
+      })
+    }
+
+    // Resetear puntos
+    if (action === 'resetear-puntos') {
+      const result = await db.collection('predicciones').updateMany(
+        {},
+        { $set: { puntos: null, recalculadoAt: null } }
+      )
+      return res.status(200).json({
+        reseteadas: result.modifiedCount,
+        mensaje: `✓ ${result.modifiedCount} predicciones reseteadas. Ahora podés recalcular puntos.`
+      })
+    }
+
+    // Recalcular puntos
+    if (action === 'recalcular') {
+      const calcularPuntos = (prediccion, partido) => {
+        if (partido.estado !== 'FT') return null
+        if (partido.golesLocal === null || partido.golesVisitante === null) return null
+        const exacto = prediccion.golesLocal === partido.golesLocal &&
+          prediccion.golesVisitante === partido.golesVisitante
+        if (exacto) return 3
+        const ganadorReal = partido.golesLocal > partido.golesVisitante ? 'local' :
+          partido.golesVisitante > partido.golesLocal ? 'visitante' : 'empate'
+        const ganadorPred = prediccion.golesLocal > prediccion.golesVisitante ? 'local' :
+          prediccion.golesVisitante > prediccion.golesLocal ? 'visitante' : 'empate'
+        return ganadorReal === ganadorPred ? 1 : 0
+      }
+
+      const partidosTerminados = await db.collection('partidos').find({ estado: 'FT' }).toArray()
+      if (partidosTerminados.length === 0) {
+        return res.status(200).json({ prediccionesActualizadas: 0, mensaje: 'No hay partidos terminados' })
+      }
+
+      const partidosMap = {}
+      for (const p of partidosTerminados) partidosMap[p._id.toString()] = p
+
+      const predicciones = await db.collection('predicciones')
+        .find({ partidoId: { $in: partidosTerminados.map(p => p._id) } })
+        .toArray()
+
+      let actualizadas = 0
+      for (const pred of predicciones) {
+        const partido = partidosMap[pred.partidoId.toString()]
+        if (!partido) continue
+        const puntos = calcularPuntos(pred, partido)
+        if (puntos === null) continue
+        await db.collection('predicciones').updateOne(
+          { _id: pred._id },
+          { $set: { puntos, recalculadoAt: new Date() } }
+        )
+        actualizadas++
+      }
+
+      return res.status(200).json({
+        prediccionesActualizadas: actualizadas,
+        mensaje: `✓ ${actualizadas} predicciones actualizadas`
+      })
+    }
+
+    return res.status(400).json({ error: `Acción desconocida: ${action}` })
+
+  } catch (error) {
+    console.error('Error en acciones admin:', error)
+    return res.status(500).json({ error: 'Error interno del servidor' })
+  }
+}

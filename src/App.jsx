@@ -38,8 +38,10 @@ export default function App() {
 
   if (isLoading || verificandoGrupo) return <Cargando />;
 
-  // Usuario logueado sin grupo → pantalla de código
-  if (isAuthenticated && grupoVerificado && !grupo) {
+  const esAdmin = user?.email === "nikoagnello1@gmail.com";
+
+  // Usuario logueado sin grupo → pantalla de código (excepto admin)
+  if (isAuthenticated && grupoVerificado && !grupo && !esAdmin) {
     return (
       <Layout>
         <UnirseGrupo onUnirse={setGrupo} />

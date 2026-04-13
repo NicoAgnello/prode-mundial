@@ -39,10 +39,12 @@ export default function Home() {
 
         {/* Decorativo */}
         <div style={styles.decorativo} className="hero-decorativo">
-          <div style={styles.pelota}>⚽</div>
-          <div style={styles.decorativoLabel}>MEXICO · USA · CANADA</div>
-        </div>
-      </div>
+  <img
+    src="/wc2026.png"
+    alt="FIFA World Cup 2026"
+    style={{ width: 180, height: 180, objectFit: 'contain' }}
+  />
+</div>
 
       {/* Stats rápidas */}
       <div style={styles.statsGrid}>

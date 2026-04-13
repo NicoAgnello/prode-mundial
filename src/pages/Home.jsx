@@ -38,7 +38,7 @@ export default function Home() {
         </div>
 
         {/* Decorativo */}
-        <div style={styles.decorativo} className="hero-decorativo">
+        <div className="hero-decorativo">
           <img
             src="/wc2026.png"
             alt="FIFA World Cup 2026"

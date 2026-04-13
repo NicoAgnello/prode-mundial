@@ -43,7 +43,7 @@ export default function UnirseGrupo({ onUnirse }) {
         <div style={styles.inputGroup}>
           <input
             type="text"
-            placeholder="Ej: LEIBNITZ2026"
+            placeholder="Ej: PRODE2026"
             value={codigo}
             onChange={e => setCodigo(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && handleUnirse()}

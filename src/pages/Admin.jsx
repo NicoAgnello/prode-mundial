@@ -28,13 +28,13 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
           }}
         >
           <input
-            placeholder="Nombre del grupo (ej: Leibnitz 2026)"
+            placeholder="Nombre del grupo (ej: LosAces)"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             style={styles.select}
           />
           <input
-            placeholder="Código (ej: LEIBNITZ2026)"
+            placeholder="Código (ej: aces123)"
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
             maxLength={20}

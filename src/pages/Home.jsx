@@ -17,8 +17,7 @@ export default function Home() {
             <span style={styles.heroTitleAccent}>2026</span>
           </h1>
           <p style={styles.heroSub}>
-            Predecí los resultados, sumá puntos y competí con tus compañeros del
-            Leibnitz.
+            Predecí los resultados, sumá puntos y competí con tus compañeros.
           </p>
           <div style={styles.heroBtns}>
             {isAuthenticated ? (

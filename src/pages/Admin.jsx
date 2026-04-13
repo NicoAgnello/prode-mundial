@@ -374,25 +374,49 @@ export default function Admin() {
                           : "-"}
                       </td>
                       <td style={styles.td}>
-                        <button
+                        <div
                           style={{
-                            ...styles.btnPequeno,
-                            background: "#fee2e2",
-                            color: "#991b1b",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4,
                           }}
-                          onClick={() =>
-                            llamarPost(
-                              "/api/admin/acciones",
-                              {
-                                action: "limpiar-predicciones",
-                                userId: u.userId,
-                              },
-                              `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`,
-                            )
-                          }
                         >
-                          Borrar prodes
-                        </button>
+                          <button
+                            style={{
+                              ...styles.btnPequeno,
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                            }}
+                            onClick={() =>
+                              llamarPost(
+                                "/api/admin/acciones",
+                                {
+                                  action: "limpiar-predicciones",
+                                  userId: u.userId,
+                                },
+                                `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`,
+                              )
+                            }
+                          >
+                            Borrar prodes
+                          </button>
+                          <button
+                            style={{
+                              ...styles.btnPequeno,
+                              background: "#fef3c7",
+                              color: "#92400e",
+                            }}
+                            onClick={() =>
+                              llamarPost(
+                                "/api/admin/acciones",
+                                { action: "resetear-grupo", userId: u.userId },
+                                `¿Resetear el grupo de ${u.nombre}? Podrá ingresar un nuevo código.`,
+                              )
+                            }
+                          >
+                            Resetear grupo
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -76,12 +76,10 @@ export default async function handler(req, res) {
         .find({ estado: "FT" })
         .toArray();
       if (partidosTerminados.length === 0) {
-        return res
-          .status(200)
-          .json({
-            prediccionesActualizadas: 0,
-            mensaje: "No hay partidos terminados",
-          });
+        return res.status(200).json({
+          prediccionesActualizadas: 0,
+          mensaje: "No hay partidos terminados",
+        });
       }
 
       const partidosMap = {};
@@ -148,7 +146,31 @@ export default async function handler(req, res) {
         codigo: codigoNormalizado,
       });
     }
+    // Resetear grupo de un usuario
+    if (action === "resetear-grupo") {
+      const { userId: targetUserId } = req.body;
+      if (!targetUserId) {
+        return res.status(400).json({ error: "userId del usuario requerido" });
+      }
 
+      const usuario = await db
+        .collection("usuarios")
+        .findOne({ userId: targetUserId });
+      if (!usuario) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      await db
+        .collection("usuarios")
+        .updateOne(
+          { userId: targetUserId },
+          { $unset: { grupoId: "", grupoNombre: "" } },
+        );
+
+      return res.status(200).json({
+        mensaje: `✓ Grupo reseteado para ${usuario.nombre || usuario.email}. El usuario podrá ingresar un nuevo código.`,
+      });
+    }
     return res.status(400).json({ error: `Acción desconocida: ${action}` });
   } catch (error) {
     console.error("Error en acciones admin:", error);

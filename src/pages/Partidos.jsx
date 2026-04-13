@@ -152,12 +152,10 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 min="0"
                 max="20"
                 value={local}
-                onChange={(e) =>
-                  setLocal(
-                    Math.max(0, Math.min(20, parseInt(e.target.value) || 0)),
-                  )
-                }
-                onBlur={(e) => setLocal(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setLocal(isNaN(val) ? 0 : Math.max(0, Math.min(20, val)));
+                }}
                 style={styles.inputGol}
               />
               <span style={styles.guionInput}>-</span>
@@ -166,12 +164,10 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
                 min="0"
                 max="20"
                 value={visitante}
-                onChange={(e) =>
-                  setVisitante(
-                    Math.max(0, Math.min(20, parseInt(e.target.value) || 0)),
-                  )
-                }
-                onBlur={(e) => setVisitante(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setVisitante(isNaN(val) ? 0 : Math.max(0, Math.min(20, val)));
+                }}
                 style={styles.inputGol}
               />
               <button

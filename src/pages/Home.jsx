@@ -12,12 +12,11 @@ export default function Home() {
         <div style={styles.heroContent}>
           <div style={styles.heroTag}>🏆 FIFA WORLD CUP 2026</div>
           <h1 style={styles.heroTitle}>
-            🏆 PRODE
-            <br />
-            <span style={styles.heroTitleAccent}>2026</span>
+            PRODE <span style={styles.heroTitleAccent}>2026</span>
           </h1>
           <p style={styles.heroSub}>
-            Predecí los resultados, sumá puntos y competí con tus compañeros.
+            Predecí los resultados, sumá puntos y competí con tus compañeros del
+            grupo.
           </p>
           <div style={styles.heroBtns}>
             {isAuthenticated ? (
@@ -38,9 +37,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Escudo decorativo */}
-        <div style={styles.escudo}>
-          <span style={{ fontSize: 120 }}>🇦🇷</span>
+        {/* Decorativo */}
+        <div style={styles.decorativo}>
+          <div style={styles.pelota}>⚽</div>
+          <div style={styles.decorativoLabel}>MEXICO · USA · CANADA</div>
         </div>
       </div>
 
@@ -66,23 +66,23 @@ export default function Home() {
           {[
             {
               paso: "01",
-              titulo: "Creá tu cuenta",
-              desc: "Entrá con tu email o Google via Auth0. Seguro y rápido.",
+              titulo: "Ingresá tu código",
+              desc: "Usá el código de tu grupo para unirte al prode con tus amigos o compañeros.",
             },
             {
               paso: "02",
               titulo: "Cargá tus prodes",
-              desc: "Antes de cada partido predecí el resultado exacto.",
+              desc: "Antes de cada partido predecí el resultado exacto. Podés modificarlo hasta que empiece.",
             },
             {
               paso: "03",
               titulo: "Sumá puntos",
-              desc: "3 pts por resultado exacto. 1 pt si acertás el ganador.",
+              desc: "3 pts por resultado exacto. 1 pt si acertás el ganador o empate.",
             },
             {
               paso: "04",
               titulo: "Ganá el prode",
-              desc: "El que más puntos acumule al final del Mundial gana.",
+              desc: "El que más puntos acumule al final del Mundial gana. ¡Hasta la final se puede predecir!",
             },
           ].map((p) => (
             <div key={p.paso} style={styles.pasoCard}>
@@ -108,7 +108,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 320,
+    minHeight: 280,
+    gap: 24,
   },
   heroBg: {
     position: "absolute",
@@ -121,6 +122,7 @@ const styles = {
     position: "relative",
     zIndex: 1,
     maxWidth: 500,
+    flex: 1,
   },
   heroTag: {
     display: "inline-block",
@@ -135,11 +137,12 @@ const styles = {
   },
   heroTitle: {
     fontFamily: "var(--font-display)",
-    fontSize: "clamp(48px, 8vw, 80px)",
+    fontSize: "clamp(40px, 7vw, 72px)",
     color: "var(--blanco)",
     lineHeight: 1,
     marginBottom: 16,
     letterSpacing: 2,
+    whiteSpace: "nowrap",
   },
   heroTitleAccent: { color: "var(--celeste)" },
   heroSub: {
@@ -160,7 +163,6 @@ const styles = {
     cursor: "pointer",
     textDecoration: "none",
     display: "inline-block",
-    transition: "background 0.2s",
   },
   btnSecundario: {
     background: "transparent",
@@ -173,13 +175,25 @@ const styles = {
     textDecoration: "none",
     display: "inline-block",
   },
-  escudo: {
+  decorativo: {
     position: "relative",
     zIndex: 1,
-    opacity: 0.9,
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 8,
+    flexShrink: 0,
+  },
+  pelota: {
+    fontSize: 80,
+    lineHeight: 1,
+    filter: "drop-shadow(0 4px 24px rgba(116,172,223,0.3))",
+  },
+  decorativoLabel: {
+    color: "rgba(255,255,255,0.3)",
+    fontSize: 10,
+    letterSpacing: 2,
+    fontWeight: 600,
   },
   statsGrid: {
     display: "grid",

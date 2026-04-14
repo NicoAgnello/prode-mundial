@@ -1,8 +1,8 @@
 import conectarDB from '../_db.js'
 
 // Período del mundial (unos días antes para probar)
-const MUNDIAL_INICIO = new Date('2026-01-01T00:00:00Z')
-const MUNDIAL_FIN = new Date('2026-12-31T23:59:59Z')
+const MUNDIAL_INICIO = new Date('2026-06-08T00:00:00Z')
+const MUNDIAL_FIN = new Date('2026-07-21T23:59:59Z')
 
 // Nombres que devuelve football-data.org → nombres en nuestra DB
 const NOMBRES_MAP = {

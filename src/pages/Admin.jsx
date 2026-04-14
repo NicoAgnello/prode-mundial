@@ -295,10 +295,13 @@ export default function Admin() {
                 Los participantes cargan sus prodes en la sección Partidos
               </li>
               <li>
-                Cuando empiece el torneo, sincronizá resultados después de cada
-                fecha
+                Durante el torneo, la sincronización corre automáticamente cada
+                30 minutos. También podés forzarla manualmente desde acá.
               </li>
-              <li>Recalculá puntos para actualizar el ranking</li>
+              <li>
+                La sincronización bloquea predicciones y calcula puntos sola —
+                no hace falta recalcular aparte.
+              </li>
             </ol>
           </div>
           <div style={styles.grid}>
@@ -333,22 +336,17 @@ export default function Admin() {
               <div style={styles.cardIcono}>🔄</div>
               <div style={styles.cardTitulo}>Sincronizar resultados</div>
               <div style={styles.cardDesc}>
-                Trae los resultados reales desde API-Football y actualiza los
-                partidos jugados. Usalo durante el Mundial después de cada fecha
-                de juego.
+                Trae los resultados desde football-data.org, bloquea las
+                predicciones de partidos que ya empezaron y calcula los puntos
+                automáticamente. El cron lo corre solo cada 30 min durante el
+                Mundial.
               </div>
               <button
                 style={styles.btn}
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost("/api/admin/sincronizar", {
-                    leagueId: 1,
-                    season: 2026,
-                    soloRecientes: false,
-                  })
-                }
+                onClick={() => llamarPost("/api/admin/sincronizar", {})}
               >
-                {cargando ? "Sincronizando..." : "Sincronizar"}
+                {cargando ? "Sincronizando..." : "Sincronizar ahora"}
               </button>
             </div>
 
@@ -356,8 +354,12 @@ export default function Admin() {
               <div style={styles.cardIcono}>🏆</div>
               <div style={styles.cardTitulo}>Recalcular puntos</div>
               <div style={styles.cardDesc}>
-                Compara todas las predicciones con los resultados y actualiza el
-                ranking. Hacelo siempre después de sincronizar resultados.
+                Recalcula puntos manualmente para todos los partidos terminados.
+                <strong
+                  style={{ color: "#92400e", display: "block", marginTop: 4 }}
+                >
+                  Solo necesario si algo falló en la sincronización automática.
+                </strong>
               </div>
               <button
                 style={styles.btn}

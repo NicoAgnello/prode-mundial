@@ -29,11 +29,11 @@ export default async function handler(req, res) {
     const ranking = await db
       .collection("predicciones")
       .aggregate([
-        { $match: { puntos: { $ne: null }, userId: { $in: userIdsGrupo } } },
+        { $match: { userId: { $in: userIdsGrupo } } },
         {
           $group: {
             _id: "$userId",
-            puntos: { $sum: "$puntos" },
+            puntos: { $sum: { $ifNull: ["$puntos", 0] } },
             exactos: { $sum: { $cond: [{ $eq: ["$puntos", 3] }, 1, 0] } },
             ganadores: { $sum: { $cond: [{ $eq: ["$puntos", 1] }, 1, 0] } },
             totalProdes: { $sum: 1 },

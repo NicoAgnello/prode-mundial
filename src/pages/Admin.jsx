@@ -350,29 +350,8 @@ export default function Admin() {
               </button>
             </div>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🏆</div>
-              <div style={styles.cardTitulo}>Recalcular puntos</div>
-              <div style={styles.cardDesc}>
-                Recalcula puntos manualmente para todos los partidos terminados.
-                <strong
-                  style={{ color: "#92400e", display: "block", marginTop: 4 }}
-                >
-                  Solo necesario si algo falló en la sincronización automática.
-                </strong>
-              </div>
-              <button
-                style={styles.btn}
-                disabled={cargando}
-                onClick={() =>
-                  llamarPost("/api/admin/acciones", { action: "recalcular" })
-                }
-              >
-                {cargando ? "Calculando..." : "Recalcular"}
-              </button>
-            </div>
 
-            <div style={{ ...styles.card, borderTop: "3px solid #ef4444" }}>
+            <div style={styles.card}>
               <div style={styles.cardIcono}>🗑️</div>
               <div style={styles.cardTitulo}>Limpiar partidos</div>
               <div style={styles.cardDesc}>
@@ -749,7 +728,7 @@ export default function Admin() {
             puntos.
           </div>
           <div style={styles.grid}>
-            <div style={{ ...styles.card, borderTop: "3px solid #f59e0b" }}>
+            <div style={styles.card}>
               <div style={styles.cardIcono}>🔁</div>
               <div style={styles.cardTitulo}>Resetear todos los puntos</div>
               <div style={styles.cardDesc}>
@@ -776,7 +755,29 @@ export default function Admin() {
               </button>
             </div>
 
-            <div style={{ ...styles.card, borderTop: "3px solid #ef4444" }}>
+            <div style={styles.card}>
+              <div style={styles.cardIcono}>🏆</div>
+              <div style={styles.cardTitulo}>Recalcular puntos</div>
+              <div style={styles.cardDesc}>
+                Recalcula puntos manualmente para todos los partidos terminados.
+                <strong
+                  style={{ color: "#92400e", display: "block", marginTop: 4 }}
+                >
+                  ⚠ Solo necesario si algo falló en la sincronización automática.
+                </strong>
+              </div>
+              <button
+                style={styles.btn}
+                disabled={cargando}
+                onClick={() =>
+                  llamarPost("/api/admin/acciones", { action: "recalcular" })
+                }
+              >
+                {cargando ? "Calculando..." : "Recalcular"}
+              </button>
+            </div>
+
+            <div style={styles.card}>
               <div style={styles.cardIcono}>🗑️</div>
               <div style={styles.cardTitulo}>Borrar todas las predicciones</div>
               <div style={styles.cardDesc}>
@@ -885,7 +886,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 8,
-    borderTop: "3px solid var(--celeste)",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
   },
   cardIcono: { fontSize: 28 },
   cardTitulo: { fontWeight: 600, fontSize: 15 },

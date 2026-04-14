@@ -234,7 +234,6 @@ export default function Partidos() {
           {[
             { key: "todos", label: "Todos" },
             { key: "proximos", label: "Próximos" },
-            { key: "en-vivo", label: "● Vivo" },
             { key: "jugados", label: "Jugados" },
             { key: "argentina", label: "🇦🇷 Argentina" },
           ].map((f) => (
@@ -305,9 +304,7 @@ export default function Partidos() {
               key={partido._id}
               partido={partido}
               prediccion={predicciones.find(
-                (p) =>
-                  p.partidoId === partido._id?.toString() ||
-                  p.partidoId === partido._id,
+                (p) => p.partidoId === partido._id?.toString(),
               )}
               onGuardar={guardar}
               puedeProde={isAuthenticated}

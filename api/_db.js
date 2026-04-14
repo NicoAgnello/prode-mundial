@@ -8,8 +8,6 @@ if (!uri) throw new Error('MONGODB_URI no está definido')
 
 const options = {
   tls: true,
-  tlsAllowInvalidCertificates: true,
-  tlsAllowInvalidHostnames: true,
 }
 
 if (process.env.NODE_ENV === 'development') {

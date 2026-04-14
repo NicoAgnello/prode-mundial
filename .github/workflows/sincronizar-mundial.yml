@@ -1,0 +1,28 @@
+name: Sincronizar Mundial 2026
+
+on:
+  schedule:
+    # Cada 30 minutos durante el período del mundial
+    # El endpoint ignora las llamadas fuera del rango de fechas
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # permite triggerearlo manualmente desde GitHub si hace falta
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar endpoint de sincronización
+        run: |
+          curl -s -o response.json -w "%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.VERCEL_URL }}/api/admin/sincronizar" \
+            > http_code.txt
+          HTTP_CODE=$(cat http_code.txt)
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response:"
+          cat response.json
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Error: el endpoint devolvió $HTTP_CODE"
+            exit 1
+          fi

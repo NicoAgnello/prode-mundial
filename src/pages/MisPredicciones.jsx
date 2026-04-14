@@ -228,11 +228,6 @@ const styles = {
     flexWrap: "wrap",
     gap: 8,
   },
-  filaEquipos: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
   equipoNombre: { fontWeight: 500, fontSize: 14 },
   marcadorPrediccion: {
     fontFamily: "var(--font-display)",
@@ -243,7 +238,6 @@ const styles = {
     borderRadius: 8,
   },
   resultadoFila: { display: "flex", alignItems: "center", gap: 8 },
-  resultadoReal: { fontSize: 13, color: "var(--texto-secundario)" },
   filaInfo: { display: "flex", flexDirection: "column", gap: 4, flex: 1 },
   filaPartido: {
     display: "flex",

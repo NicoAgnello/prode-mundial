@@ -86,7 +86,7 @@ function TarjetaCruce({ cruce }) {
   );
 }
 
-export default function Cruces() {
+export default function Cuadro() {
   const [partidos, setPartidos] = useState([]);
   const [faseActiva, setFaseActiva] = useState("16avos");
   const [cargando, setCargando] = useState(true);

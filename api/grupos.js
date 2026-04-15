@@ -1,4 +1,5 @@
 import conectarDB from "./_db.js";
+import { verificarToken } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -59,6 +60,12 @@ export default async function handler(req, res) {
         }
         return res.status(200).json({ grupo });
       }
+      // Verificar identidad
+      const tokenSub = await verificarToken(req)
+      if (!tokenSub || tokenSub !== userId) {
+        return res.status(403).json({ error: 'No autorizado' })
+      }
+
       // Verificar que no tiene grupo ya asignado
       if (usuario.grupoId) {
         const grupoActual = await db

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 export default function UnirseGrupo({ onUnirse }) {
-  const { user } = useAuth0();
+  const { user, getAccessTokenSilently } = useAuth0();
   const [codigo, setCodigo] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -41,9 +41,13 @@ export default function UnirseGrupo({ onUnirse }) {
     setCargando(true);
     setError("");
     try {
+      const token = await getAccessTokenSilently();
       const res = await fetch("/api/grupos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ userId: user.sub, codigo: codigo.trim() }),
       });
       const data = await res.json();

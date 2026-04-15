@@ -204,9 +204,9 @@ function CardPartido({ partido, prediccion, onGuardar, puedeProde }) {
 }
 
 export default function Partidos() {
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated } = useAuth0();
   const { partidos, cargando } = usePartidos();
-  const { predicciones, guardar } = useMisPredicciones(user?.sub);
+  const { predicciones, guardar } = useMisPredicciones();
   const [filtro, setFiltro] = useState("todos");
   const [grupo, setGrupo] = useState("todos");
 

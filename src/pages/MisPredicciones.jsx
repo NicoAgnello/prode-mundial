@@ -3,7 +3,7 @@ import { useMisPredicciones } from "../hooks/useProde";
 
 export default function MisPredicciones() {
   const { isAuthenticated, loginWithRedirect, user } = useAuth0();
-  const { predicciones, cargando } = useMisPredicciones(user?.sub);
+  const { predicciones, cargando } = useMisPredicciones();
 
   if (!isAuthenticated) {
     return (

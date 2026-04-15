@@ -1,4 +1,5 @@
 import conectarDB from './_db.js'
+import { verificarToken } from './_auth.js'
 
 const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
@@ -18,6 +19,11 @@ export default async function handler(req, res) {
   }
   if (nombre && nombre.length > 100) {
     return res.status(400).json({ error: 'Nombre demasiado largo' })
+  }
+
+  const tokenSub = await verificarToken(req)
+  if (!tokenSub || tokenSub !== userId) {
+    return res.status(403).json({ error: 'No autorizado' })
   }
 
   try {

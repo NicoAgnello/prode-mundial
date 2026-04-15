@@ -1,5 +1,6 @@
 import conectarDB from './_db.js'
 import { ObjectId } from 'mongodb'
+import { verificarToken } from './_auth.js'
 
 const validarGoles = (valor) => {
   const n = parseInt(valor)
@@ -63,12 +64,18 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'ID de partido inválido' })
       }
 
+      // Verificar identidad
+      const tokenSub = await verificarToken(req)
+      if (!tokenSub || tokenSub !== userId) {
+        return res.status(403).json({ error: 'No autorizado' })
+      }
+
       // Verificar que el partido existe y no empezó
       const partido = await db.collection('partidos').findOne({ _id: objectId })
       if (!partido) {
         return res.status(404).json({ error: 'Partido no encontrado' })
       }
-      if (partido.estado !== 'NS') {
+      if (partido.estado !== 'NS' || new Date(partido.fecha) <= new Date()) {
         return res.status(400).json({ error: 'El partido ya empezó, no podés modificar tu prode' })
       }
 

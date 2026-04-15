@@ -11,17 +11,28 @@ jobs:
   sincronizar:
     runs-on: ubuntu-latest
     steps:
+      - name: Verificar secrets configurados
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "ERROR: CRON_SECRET no está configurado en GitHub Secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_URL }}" ]; then
+            echo "ERROR: VERCEL_URL no está configurado en GitHub Secrets"
+            exit 1
+          fi
+
       - name: Llamar endpoint de sincronización
         run: |
-          curl -s -o response.json -w "%{http_code}" \
+          HTTP_CODE=$(curl -s -o response.json -w "%{http_code}" \
             -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.VERCEL_URL }}/api/admin/sincronizar" \
-            > http_code.txt
-          HTTP_CODE=$(cat http_code.txt)
+            "${{ secrets.VERCEL_URL }}/api/admin/sincronizar")
+
           echo "HTTP status: $HTTP_CODE"
           echo "Response:"
-          cat response.json
+          cat response.json || echo "(sin respuesta)"
+
           if [ "$HTTP_CODE" != "200" ]; then
             echo "Error: el endpoint devolvió $HTTP_CODE"
             exit 1

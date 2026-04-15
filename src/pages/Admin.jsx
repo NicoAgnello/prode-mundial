@@ -16,8 +16,11 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
     try {
       const res = await fetch("/api/admin/acciones", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "listar-grupos", userId }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": userId,
+        },
+        body: JSON.stringify({ action: "listar-grupos" }),
       });
       const data = await res.json();
       if (data.grupos) setGrupos(data.grupos);
@@ -204,8 +207,11 @@ export default function Admin() {
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...body, userId: user.sub }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": user.sub,
+        },
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       mostrarMensaje(data.mensaje || data.error, res.ok ? "ok" : "error");
@@ -295,8 +301,8 @@ export default function Admin() {
                 Los participantes cargan sus prodes en la sección Partidos
               </li>
               <li>
-                Durante el torneo, la sincronización corre automáticamente cada
-                30 minutos. También podés forzarla manualmente desde acá.
+                Durante el torneo, sincronizá los resultados manualmente desde
+                acá cuando quieras.
               </li>
               <li>
                 La sincronización bloquea predicciones y calcula puntos sola —
@@ -487,7 +493,7 @@ export default function Admin() {
                                 "/api/admin/acciones",
                                 {
                                   action: "limpiar-predicciones",
-                                  userId: u.userId,
+                                  targetUserId: u.userId,
                                 },
                                 `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`,
                               )
@@ -504,7 +510,7 @@ export default function Admin() {
                             onClick={() =>
                               llamarPost(
                                 "/api/admin/acciones",
-                                { action: "resetear-grupo", userId: u.userId },
+                                { action: "resetear-grupo", targetUserId: u.userId },
                                 `¿Resetear el grupo de ${u.nombre}? Podrá ingresar un nuevo código.`,
                               )
                             }
@@ -736,8 +742,7 @@ export default function Admin() {
                 <strong
                   style={{ color: "#92400e", display: "block", marginTop: 4 }}
                 >
-                  ⚠ Después tenés que volver a recalcular desde la sección
-                  Principal.
+                  ⚠ Después usá el botón "Recalcular puntos" más abajo.
                 </strong>
               </div>
               <button

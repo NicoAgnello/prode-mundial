@@ -99,7 +99,7 @@ export default async function handler(req, res) {
   // Auth: admin manual (x-admin-id) o Vercel cron (Authorization: Bearer CRON_SECRET)
   const cronSecret = process.env.CRON_SECRET
   const authHeader = req.headers['authorization']
-  const adminId = req.headers['x-admin-id'] || req.body?.userId
+  const adminId = req.headers['x-admin-id']
 
   const esCron = cronSecret && authHeader === `Bearer ${cronSecret}`
   const esAdmin = adminId === process.env.ADMIN_USER_ID

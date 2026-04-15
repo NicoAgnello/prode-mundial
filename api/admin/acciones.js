@@ -4,11 +4,11 @@ export default async function handler(req, res) {
   if (req.method !== "POST")
     return res.status(405).json({ error: "Método no permitido" });
 
-  const adminId = req.headers["x-admin-id"] || req.body?.userId;
+  const adminId = req.headers["x-admin-id"];
   if (adminId !== process.env.ADMIN_USER_ID) {
     return res.status(403).json({ error: "No autorizado" });
   }
-  const { action, userId } = req.body;
+  const { action, targetUserId } = req.body;
   if (!action) return res.status(400).json({ error: "action requerida" });
 
   try {
@@ -25,11 +25,11 @@ export default async function handler(req, res) {
 
     // Limpiar predicciones (de un usuario o todas)
     if (action === "limpiar-predicciones") {
-      const filtro = userId ? { userId } : {};
+      const filtro = targetUserId ? { userId: targetUserId } : {};
       const result = await db.collection("predicciones").deleteMany(filtro);
       return res.status(200).json({
         eliminadas: result.deletedCount,
-        mensaje: userId
+        mensaje: targetUserId
           ? `✓ ${result.deletedCount} predicciones eliminadas para el usuario`
           : `✓ ${result.deletedCount} predicciones eliminadas en total`,
       });
@@ -148,7 +148,6 @@ export default async function handler(req, res) {
     }
     // Resetear grupo de un usuario
     if (action === "resetear-grupo") {
-      const { userId: targetUserId } = req.body;
       if (!targetUserId) {
         return res.status(400).json({ error: "userId del usuario requerido" });
       }

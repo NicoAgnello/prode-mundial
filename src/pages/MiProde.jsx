@@ -4,17 +4,84 @@ import { usePartidos, useMisPredicciones } from "../hooks/useProde";
 
 const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
+function FilaPrediccion({ partido, pred, predExistente, onGol }) {
+  const id = partido._id.toString();
+  const yaJugo = ["FT", "AET", "PEN"].includes(partido.estado);
+  const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
+  const bloqueado = yaJugo || enJuego || new Date(partido.fecha) <= new Date();
+
+  return (
+    <div style={styles.filaPartido}>
+      <div style={styles.equipoLocal}>
+        {partido.banderaLocal && (
+          <img src={partido.banderaLocal} alt={partido.local} style={styles.bandera}
+            onError={(e) => { e.target.style.display = "none"; }} />
+        )}
+        <span style={styles.nombreEquipo}>{partido.local}</span>
+      </div>
+
+      <div style={styles.centro}>
+        {yaJugo ? (
+          <div style={styles.resultadoArea}>
+            <span style={styles.resultadoReal}>
+              {partido.golesLocal} - {partido.golesVisitante}
+            </span>
+            {predExistente && (
+              <span className={`badge-puntos ${
+                predExistente.puntos === 3 ? "badge-exacto"
+                : predExistente.puntos === 1 ? "badge-ganador"
+                : "badge-error"
+              }`}>
+                {predExistente.puntos === 3 ? "⭐ 3"
+                  : predExistente.puntos === 1 ? "✓ 1"
+                  : predExistente.puntos === 0 ? "0" : "—"}
+              </span>
+            )}
+          </div>
+        ) : bloqueado ? (
+          <div style={styles.bloqueadoArea}>
+            <span style={styles.bloqueadoText}>{enJuego ? "● En juego" : "Cerrado"}</span>
+            {predExistente && (
+              <span style={styles.predCargada}>
+                {predExistente.golesLocal} - {predExistente.golesVisitante}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div style={styles.inputsArea}>
+            <input type="number" min="0" max="20" value={pred.local}
+              onChange={(e) => onGol(id, "local", e.target.value)}
+              style={styles.inputGol} />
+            <span style={styles.guion}>-</span>
+            <input type="number" min="0" max="20" value={pred.visitante}
+              onChange={(e) => onGol(id, "visitante", e.target.value)}
+              style={styles.inputGol} />
+          </div>
+        )}
+      </div>
+
+      <div style={styles.equipoVisitante}>
+        <span style={styles.nombreEquipo}>{partido.visitante}</span>
+        {partido.banderaVisitante && (
+          <img src={partido.banderaVisitante} alt={partido.visitante} style={styles.bandera}
+            onError={(e) => { e.target.style.display = "none"; }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function MiProde() {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
   const { partidos, cargando: cargandoPartidos } = usePartidos();
   const { predicciones, cargando: cargandoPreds, guardar } = useMisPredicciones();
+  const [tab, setTab] = useState("grupos");
   const [grupoActivo, setGrupoActivo] = useState("A");
   const [prodesLocal, setProdesLocal] = useState({});
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [error, setError] = useState("");
 
-  // Inicializar inputs desde predicciones existentes
   useEffect(() => {
     if (predicciones.length === 0) return;
     const init = {};
@@ -54,23 +121,29 @@ export default function MiProde() {
     .filter((p) => p.grupo === grupoKey || p.ronda === grupoKey)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
+  const esElim = (p) => !p.grupo?.startsWith("Grupo") && !p.ronda?.startsWith("Grupo");
+  const tieneEquipos = (p) => p.local !== "Por definir" && p.visitante !== "Por definir";
+  const eliminatorias = partidos
+    .filter((p) => esElim(p) && tieneEquipos(p))
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const hayEliminatorias = eliminatorias.length > 0;
+
   const setGol = (partidoId, lado, valor) => {
-    const id = partidoId.toString();
     const n = parseInt(valor);
     const goles = isNaN(n) ? 0 : Math.max(0, Math.min(20, n));
     setProdesLocal((prev) => ({
       ...prev,
-      [id]: { ...prev[id], [lado]: goles },
+      [partidoId]: { ...prev[partidoId], [lado]: goles },
     }));
     setGuardado(false);
   };
 
-  const guardarGrupo = async () => {
+  const guardarLista = async (lista) => {
     setGuardando(true);
     setError("");
     try {
       const resultados = await Promise.all(
-        partidosGrupo
+        lista
           .filter((p) => p.estado === "NS" && new Date(p.fecha) > new Date())
           .map((p) => {
             const id = p._id.toString();
@@ -79,12 +152,8 @@ export default function MiProde() {
           })
       );
       const errores = resultados.filter((r) => r?.error);
-      if (errores.length > 0) {
-        setError(errores[0].error);
-      } else {
-        setGuardado(true);
-        setTimeout(() => setGuardado(false), 3000);
-      }
+      if (errores.length > 0) setError(errores[0].error);
+      else { setGuardado(true); setTimeout(() => setGuardado(false), 3000); }
     } catch {
       setError("Error al guardar, intentá de nuevo");
     } finally {
@@ -93,8 +162,6 @@ export default function MiProde() {
   };
 
   const cargando = cargandoPartidos || cargandoPreds;
-
-  // Resumen de puntos del usuario
   const totalPuntos = predicciones.reduce((acc, p) => acc + (p.puntos || 0), 0);
   const exactos = predicciones.filter((p) => p.puntos === 3).length;
   const ganadores = predicciones.filter((p) => p.puntos === 1).length;
@@ -120,145 +187,155 @@ export default function MiProde() {
         ))}
       </div>
 
-      {/* Selector de grupo */}
-      <div style={styles.grupoSelector}>
-        {grupos.map((g) => (
+      {/* Tabs */}
+      <div style={styles.mainTabs}>
+        {[
+          { key: "grupos", label: "Grupos" },
+          { key: "eliminatorias", label: "Eliminatorias" },
+        ].map((t) => (
           <button
-            key={g}
-            onClick={() => { setGrupoActivo(g); setGuardado(false); setError(""); }}
-            style={{ ...styles.grupoBtn, ...(grupoActivo === g ? styles.grupoBtnActivo : {}) }}
+            key={t.key}
+            onClick={() => { setTab(t.key); setGuardado(false); setError(""); }}
+            style={{ ...styles.mainTab, ...(tab === t.key ? styles.mainTabActivo : {}) }}
           >
-            {g}
+            {t.label}
+            {t.key === "eliminatorias" && hayEliminatorias && tab !== "eliminatorias" && (
+              <span style={styles.tabDot} />
+            )}
           </button>
         ))}
       </div>
 
-      {/* Card del grupo */}
-      <div style={styles.grupoCard}>
-        <div style={styles.grupoCardHeader}>
-          <span style={styles.grupoLabel}>GRUPO {grupoActivo}</span>
-          {guardado && (
-            <span style={styles.badgeGuardado}>✓ Guardado</span>
-          )}
-        </div>
-
-        {cargando ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8 }} />
+      {/* TAB: GRUPOS */}
+      {tab === "grupos" && (
+        <>
+          <div style={styles.grupoSelector}>
+            {grupos.map((g) => (
+              <button
+                key={g}
+                onClick={() => { setGrupoActivo(g); setGuardado(false); setError(""); }}
+                style={{ ...styles.grupoBtn, ...(grupoActivo === g ? styles.grupoBtnActivo : {}) }}
+              >
+                {g}
+              </button>
             ))}
           </div>
-        ) : partidosGrupo.length === 0 ? (
-          <div style={styles.vacio}>
-            Los partidos de este grupo aún no están cargados
+
+          <div style={styles.grupoCard}>
+            <div style={styles.grupoCardHeader}>
+              <span style={styles.grupoLabel}>GRUPO {grupoActivo}</span>
+              {guardado && <span style={styles.badgeGuardado}>✓ Guardado</span>}
+            </div>
+
+            {cargando ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8 }} />
+                ))}
+              </div>
+            ) : partidosGrupo.length === 0 ? (
+              <div style={styles.vacio}>Los partidos de este grupo aún no están cargados</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {partidosGrupo.map((partido, i) => {
+                  const id = partido._id.toString();
+                  const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
+                  const predExistente = predicciones.find((p) => p.partidoId?.toString() === id);
+                  return (
+                    <div key={id}>
+                      {i > 0 && <div style={styles.divisor} />}
+                      <FilaPrediccion
+                        partido={partido}
+                        pred={pred}
+                        predExistente={predExistente}
+                        onGol={setGol}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {!cargando && partidosGrupo.some(
+              (p) => p.estado === "NS" && new Date(p.fecha) > new Date()
+            ) && (
+              <div style={styles.cardFooter}>
+                {error && <span style={styles.errorText}>⚠ {error}</span>}
+                <button
+                  style={{ ...styles.btnActualizar, ...(guardando ? styles.btnGuardando : {}) }}
+                  onClick={() => guardarLista(partidosGrupo)}
+                  disabled={guardando}
+                >
+                  {guardando ? "Guardando..." : `Actualizar Grupo ${grupoActivo}`}
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {partidosGrupo.map((partido, i) => {
-              const id = partido._id.toString();
-              const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
-              const predExistente = predicciones.find(
-                (p) => p.partidoId?.toString() === id
-              );
-              const yaJugo = ["FT", "AET", "PEN"].includes(partido.estado);
-              const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
-              const bloqueado = yaJugo || enJuego || new Date(partido.fecha) <= new Date();
+        </>
+      )}
 
-              return (
-                <div key={id}>
-                  {i > 0 && <div style={styles.divisor} />}
-                  <div style={styles.filaPartido}>
-                    {/* Equipo local */}
-                    <div style={styles.equipoLocal}>
-                      {partido.banderaLocal && (
-                        <img src={partido.banderaLocal} alt={partido.local}
-                          style={styles.bandera}
-                          onError={(e) => { e.target.style.display = "none"; }} />
-                      )}
-                      <span style={styles.nombreEquipo}>{partido.local}</span>
-                    </div>
+      {/* TAB: ELIMINATORIAS */}
+      {tab === "eliminatorias" && (
+        <div style={styles.grupoCard}>
+          <div style={styles.grupoCardHeader}>
+            <span style={styles.grupoLabel}>FASE ELIMINATORIA</span>
+            {guardado && <span style={styles.badgeGuardado}>✓ Guardado</span>}
+          </div>
 
-                    {/* Centro: inputs o resultado */}
-                    <div style={styles.centro}>
-                      {yaJugo ? (
-                        <div style={styles.resultadoArea}>
-                          <span style={styles.resultadoReal}>
-                            {partido.golesLocal} - {partido.golesVisitante}
-                          </span>
-                          {predExistente && (
-                            <span className={`badge-puntos ${
-                              predExistente.puntos === 3 ? "badge-exacto"
-                              : predExistente.puntos === 1 ? "badge-ganador"
-                              : "badge-error"
-                            }`}>
-                              {predExistente.puntos === 3 ? "⭐ 3"
-                                : predExistente.puntos === 1 ? "✓ 1"
-                                : predExistente.puntos === 0 ? "0" : "—"}
-                            </span>
-                          )}
-                        </div>
-                      ) : bloqueado ? (
-                        <div style={styles.bloqueadoArea}>
-                          <span style={styles.bloqueadoText}>
-                            {enJuego ? "● En juego" : "Cerrado"}
-                          </span>
-                          {predExistente && (
-                            <span style={styles.predCargada}>
-                              {predExistente.golesLocal} - {predExistente.golesVisitante}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div style={styles.inputsArea}>
-                          <input
-                            type="number" min="0" max="20"
-                            value={pred.local}
-                            onChange={(e) => setGol(id, "local", e.target.value)}
-                            style={styles.inputGol}
-                          />
-                          <span style={styles.guion}>-</span>
-                          <input
-                            type="number" min="0" max="20"
-                            value={pred.visitante}
-                            onChange={(e) => setGol(id, "visitante", e.target.value)}
-                            style={styles.inputGol}
-                          />
-                        </div>
+          {cargando ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8 }} />
+              ))}
+            </div>
+          ) : !hayEliminatorias ? (
+            <div style={styles.vacio}>
+              Los cruces se confirman cuando terminen los grupos. Volvé una vez que avance el torneo.
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {eliminatorias.map((partido, i) => {
+                  const id = partido._id.toString();
+                  const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
+                  const predExistente = predicciones.find((p) => p.partidoId?.toString() === id);
+                  const ronda = partido.ronda || partido.grupo || "";
+                  const mostrarRonda = i === 0 || (eliminatorias[i - 1].ronda || eliminatorias[i - 1].grupo) !== ronda;
+                  return (
+                    <div key={id}>
+                      {mostrarRonda && (
+                        <div style={styles.rondaLabel}>{ronda}</div>
                       )}
+                      {!mostrarRonda && <div style={styles.divisor} />}
+                      <FilaPrediccion
+                        partido={partido}
+                        pred={pred}
+                        predExistente={predExistente}
+                        onGol={setGol}
+                      />
                     </div>
+                  );
+                })}
+              </div>
 
-                    {/* Equipo visitante */}
-                    <div style={styles.equipoVisitante}>
-                      <span style={styles.nombreEquipo}>{partido.visitante}</span>
-                      {partido.banderaVisitante && (
-                        <img src={partido.banderaVisitante} alt={partido.visitante}
-                          style={styles.bandera}
-                          onError={(e) => { e.target.style.display = "none"; }} />
-                      )}
-                    </div>
-                  </div>
+              {eliminatorias.some(
+                (p) => p.estado === "NS" && new Date(p.fecha) > new Date()
+              ) && (
+                <div style={styles.cardFooter}>
+                  {error && <span style={styles.errorText}>⚠ {error}</span>}
+                  <button
+                    style={{ ...styles.btnActualizar, ...(guardando ? styles.btnGuardando : {}) }}
+                    onClick={() => guardarLista(eliminatorias)}
+                    disabled={guardando}
+                  >
+                    {guardando ? "Guardando..." : "Guardar eliminatorias"}
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Footer del card */}
-        {!cargando && partidosGrupo.some(
-          (p) => p.estado === "NS" && new Date(p.fecha) > new Date()
-        ) && (
-          <div style={styles.cardFooter}>
-            {error && <span style={styles.errorText}>⚠ {error}</span>}
-            <button
-              style={{ ...styles.btnActualizar, ...(guardando ? styles.btnGuardando : {}) }}
-              onClick={guardarGrupo}
-              disabled={guardando}
-            >
-              {guardando ? "Guardando..." : `Actualizar Grupo ${grupoActivo}`}
-            </button>
-          </div>
-        )}
-      </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -283,10 +360,27 @@ const styles = {
     background: "var(--blanco)", border: "1px solid var(--borde)",
     borderRadius: 10, padding: "12px", textAlign: "center",
   },
-  resumenNum: {
-    fontFamily: "var(--font-display)", fontSize: 32, lineHeight: 1,
-  },
+  resumenNum: { fontFamily: "var(--font-display)", fontSize: 32, lineHeight: 1 },
   resumenLabel: { fontSize: 11, color: "var(--texto-secundario)", marginTop: 4 },
+  mainTabs: {
+    display: "flex", gap: 4, marginBottom: 16,
+    borderBottom: "1px solid var(--borde)", paddingBottom: 0,
+  },
+  mainTab: {
+    background: "transparent", border: "none",
+    borderBottom: "2px solid transparent",
+    color: "var(--texto-secundario)", padding: "8px 16px",
+    fontSize: 14, fontWeight: 500, cursor: "pointer",
+    fontFamily: "var(--font-body)", marginBottom: -1,
+    transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6,
+  },
+  mainTabActivo: {
+    color: "var(--texto-principal)", borderBottomColor: "var(--gris-oscuro)", fontWeight: 600,
+  },
+  tabDot: {
+    width: 6, height: 6, borderRadius: "50%",
+    background: "#22c55e", display: "inline-block",
+  },
   grupoSelector: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 },
   grupoBtn: {
     width: 36, height: 36, borderRadius: "50%", border: "1.5px solid var(--borde)",
@@ -308,6 +402,13 @@ const styles = {
   grupoLabel: {
     fontSize: 11, fontWeight: 700, color: "var(--texto-secundario)",
     letterSpacing: 1.5, textTransform: "uppercase",
+  },
+  rondaLabel: {
+    fontSize: 11, fontWeight: 700, color: "var(--texto-secundario)",
+    letterSpacing: 1.5, textTransform: "uppercase",
+    padding: "10px 4px 4px",
+    borderTop: "1px solid var(--borde)",
+    marginTop: 4,
   },
   badgeGuardado: {
     fontSize: 12, fontWeight: 600, color: "#166534",

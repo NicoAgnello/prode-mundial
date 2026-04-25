@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePartidos, usePosiciones } from "../hooks/useProde";
 
 const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -214,7 +214,22 @@ function Connector({ n, period, lado = "left" }) {
   );
 }
 
+const BRACKET_W = 980;
+const BRACKET_VISUAL_H = TOTAL_H + 48; // 704 + top/bottom padding
+
 function Eliminatorias({ partidos }) {
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const update = () => {
+      const available = Math.min(window.innerWidth - 32, 1100);
+      setScale(Math.min(1, available / BRACKET_W));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   const toSlot = (nombre, bandera) => ({ nombre: nombre || "?", bandera: bandera || "" });
 
   const byRonda = (keys) =>
@@ -247,9 +262,20 @@ function Eliminatorias({ partidos }) {
   const finalMatch  = mkMatch(final[0] || null);
   const tercerMatch = mkMatch(tercer[0] || null);
 
+  const scaledH = Math.round(BRACKET_VISUAL_H * scale);
+
   return (
     <div style={bk.outer}>
-      <div style={bk.scrollWrap}>
+      <div style={{
+        width: "100%",
+        height: scaledH,
+        overflow: "hidden",
+      }}>
+        <div style={{
+          transformOrigin: "top left",
+          transform: `scale(${scale})`,
+          width: BRACKET_W,
+        }}>
         <div style={bk.bracket}>
           {/* LEFT: R32 → R16 → QF → SF */}
           <BracketColumn matches={fill(r32.slice(0, 8), 8)} period={P_R32} />
@@ -286,6 +312,7 @@ function Eliminatorias({ partidos }) {
           <BracketColumn matches={fill(r16.slice(4), 4)} period={P_R16} />
           <Connector n={8} period={P_R32} lado="right" />
           <BracketColumn matches={fill(r32.slice(8), 8)} period={P_R32} />
+        </div>
         </div>
       </div>
 

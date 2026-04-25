@@ -156,51 +156,76 @@ export default async function handler(req, res) {
       })
     }
 
-    let actualizados = 0
-    let puntosCalculados = 0
+    // Preparar resultados válidos de la API (con score completo)
+    const resultadosAPI = matches
+      .map((m) => ({
+        local: traducir(m.homeTeam.name),
+        visitante: traducir(m.awayTeam.name),
+        golesLocal: m.score?.fullTime?.home,
+        golesVisitante: m.score?.fullTime?.away,
+      }))
+      .filter((m) => typeof m.golesLocal === 'number' && typeof m.golesVisitante === 'number')
 
-    for (const match of matches) {
-      const golesLocal = match.score?.fullTime?.home
-      const golesVisitante = match.score?.fullTime?.away
+    // Cargar de una sola vez todos los partidos pendientes de actualizar
+    const pares = resultadosAPI.map((m) => ({ local: m.local, visitante: m.visitante }))
+    const partidosPendientes = await db.collection('partidos').find({
+      esMundial: true,
+      estado: { $ne: 'FT' },
+      $or: pares.map((p) => ({ local: p.local, visitante: p.visitante })),
+    }).toArray()
 
-      // Saltear si no tiene score completo (no debería pasar con status=FINISHED)
-      if (typeof golesLocal !== 'number' || typeof golesVisitante !== 'number') continue
-
-      const localTraducido = traducir(match.homeTeam.name)
-      const visitanteTraducido = traducir(match.awayTeam.name)
-
-      // Solo procesar partidos que aún no están en FT en nuestra DB
-      const partido = await db.collection('partidos').findOne({
-        local: localTraducido,
-        visitante: visitanteTraducido,
-        esMundial: true,
-        estado: { $ne: 'FT' },
+    if (partidosPendientes.length === 0) {
+      return res.status(200).json({
+        lockeados: lockResult.modifiedCount,
+        actualizados: 0,
+        puntosCalculados: 0,
+        mensaje: `✓ ${lockResult.modifiedCount} lockeados. Sin resultados nuevos.`,
       })
-
-      if (!partido) continue
-
-      // Actualizar resultado en DB
-      await db.collection('partidos').updateOne(
-        { _id: partido._id },
-        { $set: { estado: 'FT', golesLocal, golesVisitante, updatedAt: new Date() } }
-      )
-      actualizados++
-
-      // Calcular y guardar puntos para cada predicción de este partido
-      const predicciones = await db
-        .collection('predicciones')
-        .find({ partidoId: partido._id })
-        .toArray()
-
-      for (const pred of predicciones) {
-        const puntos = calcularPuntos(pred, golesLocal, golesVisitante)
-        await db.collection('predicciones').updateOne(
-          { _id: pred._id },
-          { $set: { puntos, recalculadoAt: new Date() } }
-        )
-        puntosCalculados++
-      }
     }
+
+    // Mapa para lookup rápido
+    const resultadoMap = {}
+    for (const r of resultadosAPI) resultadoMap[`${r.local}|${r.visitante}`] = r
+
+    const ahora2 = new Date()
+
+    // Bulk update partidos
+    await db.collection('partidos').bulkWrite(
+      partidosPendientes.map((p) => {
+        const r = resultadoMap[`${p.local}|${p.visitante}`]
+        return {
+          updateOne: {
+            filter: { _id: p._id },
+            update: { $set: { estado: 'FT', golesLocal: r.golesLocal, golesVisitante: r.golesVisitante, updatedAt: ahora2 } },
+          },
+        }
+      })
+    )
+    const actualizados = partidosPendientes.length
+
+    // Calcular puntos: cargar todas las predicciones de esos partidos de una vez
+    const idsPartidos = partidosPendientes.map((p) => p._id)
+    const predicciones = await db.collection('predicciones').find({ partidoId: { $in: idsPartidos } }).toArray()
+
+    const partidoIdMap = {}
+    for (const p of partidosPendientes) {
+      const r = resultadoMap[`${p.local}|${p.visitante}`]
+      partidoIdMap[p._id.toString()] = r
+    }
+
+    const bulkPreds = predicciones.map((pred) => {
+      const r = partidoIdMap[pred.partidoId.toString()]
+      const puntos = r ? calcularPuntos(pred, r.golesLocal, r.golesVisitante) : null
+      return {
+        updateOne: {
+          filter: { _id: pred._id },
+          update: { $set: { puntos, recalculadoAt: ahora2 } },
+        },
+      }
+    }).filter((op) => op.updateOne.update.$set.puntos !== null)
+
+    if (bulkPreds.length > 0) await db.collection('predicciones').bulkWrite(bulkPreds)
+    const puntosCalculados = bulkPreds.length
 
     return res.status(200).json({
       lockeados: lockResult.modifiedCount,

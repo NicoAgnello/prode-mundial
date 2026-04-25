@@ -3,11 +3,10 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useState, useEffect } from "react";
 import Layout from "./components/layout/Layout";
 import Home from "./pages/Home";
-import Partidos from "./pages/Partidos";
+import Fixture from "./pages/Fixture";
 import Ranking from "./pages/Ranking";
-import MisPredicciones from "./pages/MisPredicciones";
+import MiProde from "./pages/MiProde";
 import Admin from "./pages/Admin";
-import Cuadro from "./pages/Cuadro";
 import UnirseGrupo from "./pages/UnirseGrupo";
 import Cargando from "./components/layout/Cargando";
 import { useRegistrarUsuario } from "./hooks/useRegistrarUsuario";
@@ -26,9 +25,7 @@ export default function App() {
     setVerificandoGrupo(true);
     fetch(`/api/grupos?userId=${encodeURIComponent(user.sub)}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (data.grupo) setGrupo(data.grupo);
-      })
+      .then((data) => { if (data.grupo) setGrupo(data.grupo); })
       .catch(() => {})
       .finally(() => {
         setVerificandoGrupo(false);
@@ -40,7 +37,6 @@ export default function App() {
 
   const esAdmin = user?.email === "nikoagnello1@gmail.com";
 
-  // Usuario logueado sin grupo → pantalla de código (excepto admin)
   if (isAuthenticated && grupoVerificado && !grupo && !esAdmin) {
     return (
       <Layout>
@@ -53,12 +49,15 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/partidos" element={<Partidos />} />
-        <Route path="/cruces" element={<Cuadro />} />
+        <Route path="/fixture" element={<Fixture />} />
         <Route path="/ranking" element={<Ranking />} />
-        <Route path="/mis-predicciones" element={<MisPredicciones />} />
+        <Route path="/mi-prode" element={<MiProde />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* Redirects rutas viejas */}
+        <Route path="/partidos" element={<Navigate to="/fixture" replace />} />
+        <Route path="/cruces" element={<Navigate to="/fixture" replace />} />
+        <Route path="/mis-predicciones" element={<Navigate to="/mi-prode" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );

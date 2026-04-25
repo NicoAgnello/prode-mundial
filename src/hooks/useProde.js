@@ -25,19 +25,28 @@ export function useRanking(userId) {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    if (!userId) {
-      setCargando(false);
-      return;
-    }
+    if (!userId) { setCargando(false); return; }
     fetch(`/api/ranking?userId=${encodeURIComponent(userId)}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setRanking(data);
-      })
+      .then((data) => { if (Array.isArray(data)) setRanking(data); })
       .finally(() => setCargando(false));
   }, [userId]);
 
   return { ranking, cargando };
+}
+
+export function usePosiciones() {
+  const [posiciones, setPosiciones] = useState({});
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/posiciones")
+      .then((r) => r.json())
+      .then((data) => { if (data && !data.error) setPosiciones(data); })
+      .finally(() => setCargando(false));
+  }, []);
+
+  return { posiciones, cargando };
 }
 
 export function useMisPredicciones() {
@@ -47,15 +56,10 @@ export function useMisPredicciones() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    if (!userId) {
-      setCargando(false);
-      return;
-    }
+    if (!userId) { setCargando(false); return; }
     fetch(`/api/predicciones?userId=${encodeURIComponent(userId)}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setPredicciones(data);
-      })
+      .then((data) => { if (Array.isArray(data)) setPredicciones(data); })
       .finally(() => setCargando(false));
   }, [userId]);
 
@@ -77,7 +81,7 @@ export function useMisPredicciones() {
     const data = await res.json();
     if (!data.error) {
       setPredicciones((prev) => {
-        const idx = prev.findIndex((p) => p.partidoId === partidoId);
+        const idx = prev.findIndex((p) => p.partidoId?.toString() === partidoId.toString());
         if (idx >= 0) {
           const copia = [...prev];
           copia[idx] = data;

@@ -3,10 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const navLinks = [
-  { path: '/partidos', label: 'Partidos' },
-  { path: '/cruces', label: 'Cruces' },
-  { path: '/mis-predicciones', label: 'Mis Prodes' },
+  { path: '/', label: 'Inicio' },
+  { path: '/fixture', label: 'Fixture' },
   { path: '/ranking', label: 'Ranking' },
+  { path: '/mi-prode', label: 'Mi prode' },
 ]
 
 export default function Layout({ children }) {
@@ -46,9 +46,9 @@ export default function Layout({ children }) {
                 to={link.path}
                 style={{
                   ...styles.navLink,
-                  ...(location.pathname === link.path
-                    ? styles.navLinkActive
-                    : {}),
+                  ...(link.path === '/'
+                    ? location.pathname === '/' ? styles.navLinkActive : {}
+                    : location.pathname.startsWith(link.path) ? styles.navLinkActive : {}),
                 }}
               >
                 {link.label}
@@ -109,9 +109,9 @@ export default function Layout({ children }) {
               to={link.path}
               style={{
                 ...styles.mobileLink,
-                ...(location.pathname === link.path
-                  ? { color: "var(--celeste)", fontWeight: 600 }
-                  : {}),
+                ...(link.path === '/'
+                ? location.pathname === '/' ? { color: "var(--celeste)", fontWeight: 600 } : {}
+                : location.pathname.startsWith(link.path) ? { color: "var(--celeste)", fontWeight: 600 } : {}),
               }}
               onClick={() => setMenuAbierto(false)}
             >

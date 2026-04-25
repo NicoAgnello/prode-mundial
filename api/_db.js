@@ -8,6 +8,9 @@ if (!uri) throw new Error('MONGODB_URI no está definido')
 
 const options = {
   tls: true,
+  serverSelectionTimeoutMS: 8000,
+  connectTimeoutMS: 8000,
+  socketTimeoutMS: 9000,
 }
 
 if (process.env.NODE_ENV === 'development') {

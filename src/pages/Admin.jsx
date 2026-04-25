@@ -204,6 +204,8 @@ export default function Admin() {
   const llamarPost = async (url, body = {}, confirmMsg = null) => {
     if (confirmMsg && !confirm(confirmMsg)) return;
     setCargando(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -212,13 +214,20 @@ export default function Admin() {
           "x-admin-id": user.sub,
         },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await res.json();
       mostrarMensaje(data.mensaje || data.error, res.ok ? "ok" : "error");
       cargarPartidos();
       cargarUsuarios();
     } catch (e) {
-      mostrarMensaje("Error de conexión: " + e.message, "error");
+      clearTimeout(timer);
+      if (e.name === "AbortError") {
+        mostrarMensaje("Tiempo de espera agotado. Verificá la conexión a la DB y reintentá.", "error");
+      } else {
+        mostrarMensaje("Error de conexión: " + e.message, "error");
+      }
     } finally {
       setCargando(false);
     }

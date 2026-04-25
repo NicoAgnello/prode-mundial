@@ -6,26 +6,30 @@ export default async function handler(req, res) {
 
   try {
     const db = await conectarDB()
-    const partidos = await db.collection('partidos').find({
-      estado: 'FT',
+    const todosPartidos = await db.collection('partidos').find({
       $or: [{ grupo: { $regex: /^Grupo/ } }, { ronda: { $regex: /^Grupo/ } }],
     }).toArray()
 
     const tabla = {}
 
-    for (const p of partidos) {
+    const init = (key, nombre, bandera) => {
+      if (!tabla[key]) tabla[key] = {}
+      if (!tabla[key][nombre])
+        tabla[key][nombre] = { nombre, bandera: bandera || '', pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }
+    }
+
+    // Initialize all teams with 0s
+    for (const p of todosPartidos) {
       const key = p.grupo || p.ronda
       if (!key?.startsWith('Grupo')) continue
-      if (!tabla[key]) tabla[key] = {}
+      init(key, p.local, p.banderaLocal)
+      init(key, p.visitante, p.banderaVisitante)
+    }
 
-      const init = (nombre, bandera) => {
-        if (!tabla[key][nombre])
-          tabla[key][nombre] = { nombre, bandera: bandera || '', pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }
-      }
-
-      init(p.local, p.banderaLocal)
-      init(p.visitante, p.banderaVisitante)
-
+    // Compute stats only for finished matches
+    for (const p of todosPartidos.filter(p => p.estado === 'FT')) {
+      const key = p.grupo || p.ronda
+      if (!key?.startsWith('Grupo')) continue
       const gL = p.golesLocal
       const gV = p.golesVisitante
       if (gL == null || gV == null) continue

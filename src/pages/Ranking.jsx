@@ -1,89 +1,83 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useRanking } from "../hooks/useProde";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const medallas = ["🥇", "🥈", "🥉"];
 
 export default function Ranking() {
   const { user } = useAuth0();
   const { ranking, cargando } = useRanking(user?.sub);
+
   return (
     <div>
-      <div style={styles.header}>
-        <h1 style={styles.titulo}>RANKING</h1>
-        <span style={styles.sub}>{ranking.length} participantes</span>
+      <div className="flex items-baseline gap-3 mb-5">
+        <h1 className="font-display text-[36px] tracking-[2px]">RANKING</h1>
+        <span className="text-sm text-muted-foreground">{ranking.length} participantes</span>
       </div>
 
       {cargando ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="flex flex-col gap-2">
           {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="skeleton"
-              style={{ height: 60, borderRadius: 12 }}
-            />
+            <div key={i} className="skeleton h-[60px] rounded-lg" />
           ))}
         </div>
       ) : (
-        <div style={styles.lista}>
+        <div className="flex flex-col gap-2">
           {ranking.map((jugador, idx) => {
             const esYo = jugador.userId === user?.sub;
             return (
               <div
                 key={jugador.userId}
-                style={{
-                  ...styles.fila,
-                  ...(esYo ? styles.filaPropia : {}),
-                  ...(idx < 3 ? styles.filaPodio : {}),
-                }}
+                className={cn(
+                  "flex items-center gap-3 bg-background border border-border rounded-lg px-4 py-3 transition-shadow",
+                  idx < 3 && "border-l-[3px] border-l-oro",
+                  esYo && "bg-celeste-light border-celeste"
+                )}
               >
-                <div style={styles.posicion}>
+                <div className="w-9 text-center shrink-0">
                   {idx < 3 ? (
-                    <span style={{ fontSize: 22 }}>{medallas[idx]}</span>
+                    <span className="text-[22px]">{medallas[idx]}</span>
                   ) : (
-                    <span style={styles.numPos}>{idx + 1}</span>
+                    <span className="font-display text-xl text-muted-foreground">{idx + 1}</span>
                   )}
                 </div>
 
                 <img
-                  src={
-                    jugador.foto ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${jugador.nombre}`
-                  }
+                  src={jugador.foto || `https://api.dicebear.com/7.x/initials/svg?seed=${jugador.nombre}`}
                   alt={jugador.nombre}
-                  style={styles.avatar}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-border shrink-0"
                 />
 
-                <div style={styles.info}>
-                  <div style={styles.nombre}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 font-semibold text-[15px] truncate">
                     {jugador.nombre}
-                    {esYo && <span style={styles.badgeYo}>vos</span>}
+                    {esYo && (
+                      <Badge className="bg-celeste text-white text-[10px] tracking-wide px-1.5 h-auto py-px shrink-0">
+                        vos
+                      </Badge>
+                    )}
                   </div>
-                  <div style={styles.stats}>
-                    <span>
-                      {jugador.exactos} exactos · {jugador.ganadores} ganadores
-                    </span>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {jugador.exactos} exactos · {jugador.ganadores} ganadores
                   </div>
                 </div>
 
-                <div style={styles.puntos}>
-                  <span style={styles.numPuntos}>{jugador.puntos}</span>
-                  <span style={styles.labelPts}>pts</span>
+                <div className="text-right shrink-0">
+                  <span className="font-display text-[28px] text-celeste-dark block leading-none">
+                    {jugador.puntos}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">pts</span>
                 </div>
               </div>
             );
           })}
 
           {ranking.length === 0 && (
-            <div style={styles.vacio}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏆</div>
-              <div style={{ fontWeight: 600 }}>Todavía no hay predicciones</div>
-              <div
-                style={{
-                  color: "var(--texto-secundario)",
-                  fontSize: 14,
-                  marginTop: 4,
-                }}
-              >
+            <div className="text-center py-12 px-5 bg-background border border-border rounded-2xl">
+              <div className="text-5xl mb-3">🏆</div>
+              <div className="font-semibold">Todavía no hay predicciones</div>
+              <div className="text-sm text-muted-foreground mt-1">
                 Cuando empiece el Mundial el ranking se va a ir actualizando
               </div>
             </div>
@@ -93,90 +87,3 @@ export default function Ranking() {
     </div>
   );
 }
-
-const styles = {
-  header: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: 12,
-    marginBottom: 20,
-  },
-  titulo: {
-    fontFamily: "var(--font-display)",
-    fontSize: 36,
-    letterSpacing: 2,
-  },
-  sub: { color: "var(--texto-secundario)", fontSize: 14 },
-  lista: { display: "flex", flexDirection: "column", gap: 8 },
-  fila: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    background: "var(--blanco)",
-    border: "1px solid var(--borde)",
-    borderRadius: 12,
-    padding: "12px 16px",
-    transition: "box-shadow 0.2s",
-  },
-  filaPodio: {
-    borderLeft: "3px solid var(--oro)",
-  },
-  filaPropia: {
-    background: "var(--celeste-light)",
-    borderColor: "var(--celeste)",
-  },
-  posicion: {
-    width: 36,
-    textAlign: "center",
-  },
-  numPos: {
-    fontFamily: "var(--font-display)",
-    fontSize: 20,
-    color: "var(--texto-secundario)",
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "2px solid var(--borde)",
-    flexShrink: 0,
-  },
-  info: { flex: 1, minWidth: 0 },
-  nombre: {
-    fontWeight: 600,
-    fontSize: 15,
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  badgeYo: {
-    background: "var(--celeste)",
-    color: "var(--blanco)",
-    fontSize: 10,
-    padding: "1px 7px",
-    borderRadius: 99,
-    fontWeight: 600,
-    letterSpacing: 1,
-  },
-  stats: { fontSize: 12, color: "var(--texto-secundario)", marginTop: 2 },
-  puntos: { textAlign: "right", flexShrink: 0 },
-  numPuntos: {
-    fontFamily: "var(--font-display)",
-    fontSize: 28,
-    color: "var(--celeste-dark)",
-    display: "block",
-    lineHeight: 1,
-  },
-  labelPts: { fontSize: 11, color: "var(--texto-secundario)" },
-  vacio: {
-    textAlign: "center",
-    padding: "48px 20px",
-    background: "var(--blanco)",
-    borderRadius: 16,
-    border: "1px solid var(--borde)",
-  },
-};

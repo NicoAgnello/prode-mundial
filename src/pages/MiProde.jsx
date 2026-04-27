@@ -1,37 +1,55 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { usePartidos, useMisPredicciones } from "../hooks/useProde";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
+const MAIN_TABS = [
+  { key: "grupos",        label: "Grupos" },
+  { key: "eliminatorias", label: "Eliminatorias" },
+];
+
+const resumenDef = (totalPuntos, exactos, ganadores, cargados) => [
+  { num: totalPuntos, label: "Puntos totales",   cls: "text-celeste-dark" },
+  { num: exactos,     label: "Exactos",           cls: "text-success" },
+  { num: ganadores,   label: "Ganadores",         cls: "text-celeste-dark" },
+  { num: cargados,    label: "Prodes cargados",   cls: "text-foreground" },
+];
+
+// ---------- sub-componentes ----------
+
 function FilaPrediccion({ partido, pred, predExistente, onGol }) {
-  const id = partido._id.toString();
-  const yaJugo = ["FT", "AET", "PEN"].includes(partido.estado);
-  const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
+  const id        = partido._id.toString();
+  const yaJugo   = ["FT", "AET", "PEN"].includes(partido.estado);
+  const enJuego  = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
   const bloqueado = yaJugo || enJuego || new Date(partido.fecha) <= new Date();
 
   return (
-    <div style={styles.filaPartido}>
-      <div style={styles.equipoLocal}>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-2.5 px-1">
+      <div className="flex items-center gap-2">
         {partido.banderaLocal && (
-          <img src={partido.banderaLocal} alt={partido.local} style={styles.bandera}
+          <img src={partido.banderaLocal} alt={partido.local}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
-        <span style={styles.nombreEquipo}>{partido.local}</span>
+        <span className="text-sm font-medium">{partido.local}</span>
       </div>
 
-      <div style={styles.centro}>
+      <div className="flex justify-center">
         {yaJugo ? (
-          <div style={styles.resultadoArea}>
-            <span style={styles.resultadoReal}>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-display text-[22px]">
               {partido.golesLocal} - {partido.golesVisitante}
             </span>
             {predExistente && (
-              <span className={`badge-puntos ${
+              <span className={cn(
+                "badge-puntos",
                 predExistente.puntos === 3 ? "badge-exacto"
                 : predExistente.puntos === 1 ? "badge-ganador"
                 : "badge-error"
-              }`}>
+              )}>
                 {predExistente.puntos === 3 ? "⭐ 3"
                   : predExistente.puntos === 1 ? "✓ 1"
                   : predExistente.puntos === 0 ? "0" : "—"}
@@ -39,31 +57,38 @@ function FilaPrediccion({ partido, pred, predExistente, onGol }) {
             )}
           </div>
         ) : bloqueado ? (
-          <div style={styles.bloqueadoArea}>
-            <span style={styles.bloqueadoText}>{enJuego ? "● En juego" : "Cerrado"}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[11px] text-muted-foreground italic">
+              {enJuego ? "● En juego" : "Cerrado"}
+            </span>
             {predExistente && (
-              <span style={styles.predCargada}>
+              <span className="font-display text-lg text-celeste-dark">
                 {predExistente.golesLocal} - {predExistente.golesVisitante}
               </span>
             )}
           </div>
         ) : (
-          <div style={styles.inputsArea}>
-            <input type="number" min="0" max="20" value={pred.local}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number" min="0" max="20" value={pred.local}
               onChange={(e) => onGol(id, "local", e.target.value)}
-              style={styles.inputGol} />
-            <span style={styles.guion}>-</span>
-            <input type="number" min="0" max="20" value={pred.visitante}
+              className="w-11 h-9 text-center border-[1.5px] border-border rounded-lg text-base font-semibold outline-none focus:border-celeste bg-background transition-colors"
+            />
+            <span className="text-lg text-muted-foreground font-light">-</span>
+            <input
+              type="number" min="0" max="20" value={pred.visitante}
               onChange={(e) => onGol(id, "visitante", e.target.value)}
-              style={styles.inputGol} />
+              className="w-11 h-9 text-center border-[1.5px] border-border rounded-lg text-base font-semibold outline-none focus:border-celeste bg-background transition-colors"
+            />
           </div>
         )}
       </div>
 
-      <div style={styles.equipoVisitante}>
-        <span style={styles.nombreEquipo}>{partido.visitante}</span>
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm font-medium">{partido.visitante}</span>
         {partido.banderaVisitante && (
-          <img src={partido.banderaVisitante} alt={partido.visitante} style={styles.bandera}
+          <img src={partido.banderaVisitante} alt={partido.visitante}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
       </div>
@@ -71,16 +96,33 @@ function FilaPrediccion({ partido, pred, predExistente, onGol }) {
   );
 }
 
+function CardFooter({ error, guardando, label, onGuardar }) {
+  return (
+    <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-border flex-wrap">
+      {error && <span className="text-[13px] text-error flex-1">⚠ {error}</span>}
+      <Button
+        onClick={onGuardar}
+        disabled={guardando}
+        className="bg-celeste text-white hover:bg-celeste-dark px-5 text-sm font-semibold"
+      >
+        {guardando ? "Guardando..." : label}
+      </Button>
+    </div>
+  );
+}
+
+// ---------- página principal ----------
+
 export default function MiProde() {
   const { isAuthenticated, loginWithRedirect } = useAuth0();
-  const { partidos, cargando: cargandoPartidos } = usePartidos();
+  const { partidos, cargando: cargandoPartidos }          = usePartidos();
   const { predicciones, cargando: cargandoPreds, guardar } = useMisPredicciones();
-  const [tab, setTab] = useState("grupos");
+  const [tab, setTab]             = useState("grupos");
   const [grupoActivo, setGrupoActivo] = useState("A");
   const [prodesLocal, setProdesLocal] = useState({});
   const [guardando, setGuardando] = useState(false);
-  const [guardado, setGuardado] = useState(false);
-  const [error, setError] = useState("");
+  const [guardado, setGuardado]   = useState(false);
+  const [error, setError]         = useState("");
 
   useEffect(() => {
     if (predicciones.length === 0) return;
@@ -94,15 +136,16 @@ export default function MiProde() {
 
   if (!isAuthenticated) {
     return (
-      <div style={styles.centrado}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <h2 style={styles.tituloAcceso}>Tenés que iniciar sesión</h2>
-        <p style={{ color: "var(--texto-secundario)", marginBottom: 20 }}>
-          Para cargar tus prodes necesitás estar logueado.
-        </p>
-        <button style={styles.btnLogin} onClick={() => loginWithRedirect()}>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h2 className="font-display text-[28px] tracking-[1px] mb-2">Tenés que iniciar sesión</h2>
+        <p className="text-muted-foreground mb-5">Para cargar tus prodes necesitás estar logueado.</p>
+        <Button
+          className="bg-celeste text-white hover:bg-celeste-dark px-7 py-3 text-[15px] h-auto"
+          onClick={() => loginWithRedirect()}
+        >
           Entrar al prode
-        </button>
+        </Button>
       </div>
     );
   }
@@ -116,12 +159,12 @@ export default function MiProde() {
   ].sort();
   const grupos = gruposDisponibles.length > 0 ? gruposDisponibles : LETRAS;
 
-  const grupoKey = `Grupo ${grupoActivo}`;
+  const grupoKey      = `Grupo ${grupoActivo}`;
   const partidosGrupo = partidos
     .filter((p) => p.grupo === grupoKey || p.ronda === grupoKey)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-  const esElim = (p) => !p.grupo?.startsWith("Grupo") && !p.ronda?.startsWith("Grupo");
+  const esElim      = (p) => !p.grupo?.startsWith("Grupo") && !p.ronda?.startsWith("Grupo");
   const tieneEquipos = (p) => p.local !== "Por definir" && p.visitante !== "Por definir";
   const eliminatorias = partidos
     .filter((p) => esElim(p) && tieneEquipos(p))
@@ -131,10 +174,7 @@ export default function MiProde() {
   const setGol = (partidoId, lado, valor) => {
     const n = parseInt(valor);
     const goles = isNaN(n) ? 0 : Math.max(0, Math.min(20, n));
-    setProdesLocal((prev) => ({
-      ...prev,
-      [partidoId]: { ...prev[partidoId], [lado]: goles },
-    }));
+    setProdesLocal((prev) => ({ ...prev, [partidoId]: { ...prev[partidoId], [lado]: goles } }));
     setGuardado(false);
   };
 
@@ -146,7 +186,7 @@ export default function MiProde() {
         lista
           .filter((p) => p.estado === "NS" && new Date(p.fecha) > new Date())
           .map((p) => {
-            const id = p._id.toString();
+            const id   = p._id.toString();
             const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
             return guardar(id, pred.local, pred.visitante);
           })
@@ -161,46 +201,56 @@ export default function MiProde() {
     }
   };
 
-  const cargando = cargandoPartidos || cargandoPreds;
+  const cargando    = cargandoPartidos || cargandoPreds;
   const totalPuntos = predicciones.reduce((acc, p) => acc + (p.puntos || 0), 0);
-  const exactos = predicciones.filter((p) => p.puntos === 3).length;
-  const ganadores = predicciones.filter((p) => p.puntos === 1).length;
-  const cargados = predicciones.length;
+  const exactos     = predicciones.filter((p) => p.puntos === 3).length;
+  const ganadores   = predicciones.filter((p) => p.puntos === 1).length;
+  const cargados    = predicciones.length;
+
+  const grupoCardHeader = (label) => (
+    <div className="flex justify-between items-center mb-3.5">
+      <span className="text-[11px] font-bold text-muted-foreground tracking-[1.5px] uppercase">
+        {label}
+      </span>
+      {guardado && (
+        <span className="text-xs font-semibold text-[#166534] bg-[#dcfce7] px-2.5 py-0.5 rounded-full">
+          ✓ Guardado
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <div>
-      <h1 style={styles.titulo}>MI PRODE</h1>
-      <p style={styles.subtitulo}>Se cierra cuando empieza cada partido</p>
+      <h1 className="font-display text-[36px] tracking-[2px] mb-1">MI PRODE</h1>
+      <p className="text-[13px] text-muted-foreground mb-5">Se cierra cuando empieza cada partido</p>
 
       {/* Resumen */}
-      <div style={styles.resumenGrid}>
-        {[
-          { num: totalPuntos, label: "Puntos totales", color: "var(--celeste-dark)" },
-          { num: exactos, label: "Exactos", color: "#22c55e" },
-          { num: ganadores, label: "Ganadores", color: "var(--celeste-dark)" },
-          { num: cargados, label: "Prodes cargados", color: "var(--texto-principal)" },
-        ].map((item) => (
-          <div key={item.label} style={styles.resumenCard}>
-            <div style={{ ...styles.resumenNum, color: item.color }}>{item.num}</div>
-            <div style={styles.resumenLabel}>{item.label}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+        {resumenDef(totalPuntos, exactos, ganadores, cargados).map((item) => (
+          <div key={item.label} className="bg-background border border-border rounded-[10px] p-3 text-center">
+            <div className={cn("font-display text-[32px] leading-none", item.cls)}>{item.num}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">{item.label}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div style={styles.mainTabs}>
-        {[
-          { key: "grupos", label: "Grupos" },
-          { key: "eliminatorias", label: "Eliminatorias" },
-        ].map((t) => (
+      <div className="flex border-b border-border mb-4">
+        {MAIN_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => { setTab(t.key); setGuardado(false); setError(""); }}
-            style={{ ...styles.mainTab, ...(tab === t.key ? styles.mainTabActivo : {}) }}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
+              tab === t.key
+                ? "text-foreground border-gris-oscuro font-semibold"
+                : "text-muted-foreground border-transparent"
+            )}
           >
             {t.label}
             {t.key === "eliminatorias" && hayEliminatorias && tab !== "eliminatorias" && (
-              <span style={styles.tabDot} />
+              <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
             )}
           </button>
         ))}
@@ -209,66 +259,57 @@ export default function MiProde() {
       {/* TAB: GRUPOS */}
       {tab === "grupos" && (
         <>
-          <div style={styles.grupoSelector}>
+          <div className="flex gap-1.5 flex-wrap mb-4">
             {grupos.map((g) => (
               <button
                 key={g}
                 onClick={() => { setGrupoActivo(g); setGuardado(false); setError(""); }}
-                style={{ ...styles.grupoBtn, ...(grupoActivo === g ? styles.grupoBtnActivo : {}) }}
+                className={cn(
+                  "w-9 h-9 rounded-full border-[1.5px] border-border bg-background text-muted-foreground text-[13px] font-semibold flex items-center justify-center transition-all",
+                  grupoActivo === g && "bg-gris-oscuro border-gris-oscuro text-white"
+                )}
               >
                 {g}
               </button>
             ))}
           </div>
 
-          <div style={styles.grupoCard}>
-            <div style={styles.grupoCardHeader}>
-              <span style={styles.grupoLabel}>GRUPO {grupoActivo}</span>
-              {guardado && <span style={styles.badgeGuardado}>✓ Guardado</span>}
-            </div>
+          <div className="bg-background border border-border rounded-lg px-5 py-4 shadow-sm">
+            {grupoCardHeader(`GRUPO ${grupoActivo}`)}
 
             {cargando ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8 }} />
+                  <div key={i} className="skeleton h-14 rounded-lg" />
                 ))}
               </div>
             ) : partidosGrupo.length === 0 ? (
-              <div style={styles.vacio}>Los partidos de este grupo aún no están cargados</div>
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                Los partidos de este grupo aún no están cargados
+              </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <div>
                 {partidosGrupo.map((partido, i) => {
-                  const id = partido._id.toString();
-                  const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
+                  const id           = partido._id.toString();
+                  const pred         = prodesLocal[id] ?? { local: 0, visitante: 0 };
                   const predExistente = predicciones.find((p) => p.partidoId?.toString() === id);
                   return (
                     <div key={id}>
-                      {i > 0 && <div style={styles.divisor} />}
-                      <FilaPrediccion
-                        partido={partido}
-                        pred={pred}
-                        predExistente={predExistente}
-                        onGol={setGol}
-                      />
+                      {i > 0 && <div className="h-px bg-border -mx-1" />}
+                      <FilaPrediccion partido={partido} pred={pred} predExistente={predExistente} onGol={setGol} />
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {!cargando && partidosGrupo.some(
-              (p) => p.estado === "NS" && new Date(p.fecha) > new Date()
-            ) && (
-              <div style={styles.cardFooter}>
-                {error && <span style={styles.errorText}>⚠ {error}</span>}
-                <button
-                  style={{ ...styles.btnActualizar, ...(guardando ? styles.btnGuardando : {}) }}
-                  onClick={() => guardarLista(partidosGrupo)}
-                  disabled={guardando}
-                >
-                  {guardando ? "Guardando..." : `Actualizar Grupo ${grupoActivo}`}
-                </button>
-              </div>
+            {!cargando && partidosGrupo.some((p) => p.estado === "NS" && new Date(p.fecha) > new Date()) && (
+              <CardFooter
+                error={error}
+                guardando={guardando}
+                label={`Actualizar Grupo ${grupoActivo}`}
+                onGuardar={() => guardarLista(partidosGrupo)}
+              />
             )}
           </div>
         </>
@@ -276,61 +317,49 @@ export default function MiProde() {
 
       {/* TAB: ELIMINATORIAS */}
       {tab === "eliminatorias" && (
-        <div style={styles.grupoCard}>
-          <div style={styles.grupoCardHeader}>
-            <span style={styles.grupoLabel}>FASE ELIMINATORIA</span>
-            {guardado && <span style={styles.badgeGuardado}>✓ Guardado</span>}
-          </div>
+        <div className="bg-background border border-border rounded-lg px-5 py-4 shadow-sm">
+          {grupoCardHeader("FASE ELIMINATORIA")}
 
           {cargando ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="flex flex-col gap-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8 }} />
+                <div key={i} className="skeleton h-14 rounded-lg" />
               ))}
             </div>
           ) : !hayEliminatorias ? (
-            <div style={styles.vacio}>
+            <div className="text-center py-8 text-sm text-muted-foreground">
               Los cruces se confirman cuando terminen los grupos. Volvé una vez que avance el torneo.
             </div>
           ) : (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <div>
                 {eliminatorias.map((partido, i) => {
-                  const id = partido._id.toString();
-                  const pred = prodesLocal[id] ?? { local: 0, visitante: 0 };
+                  const id            = partido._id.toString();
+                  const pred          = prodesLocal[id] ?? { local: 0, visitante: 0 };
                   const predExistente = predicciones.find((p) => p.partidoId?.toString() === id);
-                  const ronda = partido.ronda || partido.grupo || "";
-                  const mostrarRonda = i === 0 || (eliminatorias[i - 1].ronda || eliminatorias[i - 1].grupo) !== ronda;
+                  const ronda         = partido.ronda || partido.grupo || "";
+                  const mostrarRonda  = i === 0 || (eliminatorias[i - 1].ronda || eliminatorias[i - 1].grupo) !== ronda;
                   return (
                     <div key={id}>
                       {mostrarRonda && (
-                        <div style={styles.rondaLabel}>{ronda}</div>
+                        <div className="text-[11px] font-bold text-muted-foreground tracking-[1.5px] uppercase px-1 pt-2.5 pb-1 border-t border-border mt-1">
+                          {ronda}
+                        </div>
                       )}
-                      {!mostrarRonda && <div style={styles.divisor} />}
-                      <FilaPrediccion
-                        partido={partido}
-                        pred={pred}
-                        predExistente={predExistente}
-                        onGol={setGol}
-                      />
+                      {!mostrarRonda && <div className="h-px bg-border -mx-1" />}
+                      <FilaPrediccion partido={partido} pred={pred} predExistente={predExistente} onGol={setGol} />
                     </div>
                   );
                 })}
               </div>
 
-              {eliminatorias.some(
-                (p) => p.estado === "NS" && new Date(p.fecha) > new Date()
-              ) && (
-                <div style={styles.cardFooter}>
-                  {error && <span style={styles.errorText}>⚠ {error}</span>}
-                  <button
-                    style={{ ...styles.btnActualizar, ...(guardando ? styles.btnGuardando : {}) }}
-                    onClick={() => guardarLista(eliminatorias)}
-                    disabled={guardando}
-                  >
-                    {guardando ? "Guardando..." : "Guardar eliminatorias"}
-                  </button>
-                </div>
+              {eliminatorias.some((p) => p.estado === "NS" && new Date(p.fecha) > new Date()) && (
+                <CardFooter
+                  error={error}
+                  guardando={guardando}
+                  label="Guardar eliminatorias"
+                  onGuardar={() => guardarLista(eliminatorias)}
+                />
               )}
             </>
           )}
@@ -339,125 +368,3 @@ export default function MiProde() {
     </div>
   );
 }
-
-const styles = {
-  centrado: {
-    display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", minHeight: "50vh", textAlign: "center",
-  },
-  tituloAcceso: { fontFamily: "var(--font-display)", fontSize: 28, letterSpacing: 1 },
-  btnLogin: {
-    background: "var(--celeste)", color: "var(--blanco)", border: "none",
-    padding: "12px 28px", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer",
-  },
-  titulo: { fontFamily: "var(--font-display)", fontSize: 36, letterSpacing: 2, marginBottom: 4 },
-  subtitulo: { fontSize: 13, color: "var(--texto-secundario)", marginBottom: 20 },
-  resumenGrid: {
-    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-    gap: 10, marginBottom: 20,
-  },
-  resumenCard: {
-    background: "var(--blanco)", border: "1px solid var(--borde)",
-    borderRadius: 10, padding: "12px", textAlign: "center",
-  },
-  resumenNum: { fontFamily: "var(--font-display)", fontSize: 32, lineHeight: 1 },
-  resumenLabel: { fontSize: 11, color: "var(--texto-secundario)", marginTop: 4 },
-  mainTabs: {
-    display: "flex", gap: 4, marginBottom: 16,
-    borderBottom: "1px solid var(--borde)", paddingBottom: 0,
-  },
-  mainTab: {
-    background: "transparent", border: "none",
-    borderBottom: "2px solid transparent",
-    color: "var(--texto-secundario)", padding: "8px 16px",
-    fontSize: 14, fontWeight: 500, cursor: "pointer",
-    fontFamily: "var(--font-body)", marginBottom: -1,
-    transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6,
-  },
-  mainTabActivo: {
-    color: "var(--texto-principal)", borderBottomColor: "var(--gris-oscuro)", fontWeight: 600,
-  },
-  tabDot: {
-    width: 6, height: 6, borderRadius: "50%",
-    background: "#22c55e", display: "inline-block",
-  },
-  grupoSelector: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 },
-  grupoBtn: {
-    width: 36, height: 36, borderRadius: "50%", border: "1.5px solid var(--borde)",
-    background: "var(--blanco)", color: "var(--texto-secundario)", fontSize: 13,
-    fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center",
-    justifyContent: "center", transition: "all 0.15s",
-  },
-  grupoBtnActivo: {
-    background: "var(--gris-oscuro)", borderColor: "var(--gris-oscuro)", color: "var(--blanco)",
-  },
-  grupoCard: {
-    background: "var(--blanco)", border: "1px solid var(--borde)",
-    borderRadius: 12, padding: "16px 20px",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  },
-  grupoCardHeader: {
-    display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14,
-  },
-  grupoLabel: {
-    fontSize: 11, fontWeight: 700, color: "var(--texto-secundario)",
-    letterSpacing: 1.5, textTransform: "uppercase",
-  },
-  rondaLabel: {
-    fontSize: 11, fontWeight: 700, color: "var(--texto-secundario)",
-    letterSpacing: 1.5, textTransform: "uppercase",
-    padding: "10px 4px 4px",
-    borderTop: "1px solid var(--borde)",
-    marginTop: 4,
-  },
-  badgeGuardado: {
-    fontSize: 12, fontWeight: 600, color: "#166534",
-    background: "#dcfce7", padding: "3px 10px", borderRadius: 99,
-  },
-  divisor: { height: 1, background: "var(--borde)", margin: "0 -4px" },
-  filaPartido: {
-    display: "grid", gridTemplateColumns: "1fr auto 1fr",
-    alignItems: "center", gap: 8, padding: "10px 4px",
-  },
-  equipoLocal: { display: "flex", alignItems: "center", gap: 8 },
-  equipoVisitante: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 },
-  bandera: {
-    width: 28, height: 20, objectFit: "cover", borderRadius: 2,
-    border: "1px solid var(--borde)", flexShrink: 0,
-  },
-  nombreEquipo: { fontSize: 14, fontWeight: 500, color: "var(--texto-principal)" },
-  centro: { display: "flex", justifyContent: "center" },
-  inputsArea: { display: "flex", alignItems: "center", gap: 6 },
-  inputGol: {
-    width: 44, height: 36, textAlign: "center",
-    border: "1.5px solid var(--borde)", borderRadius: 8,
-    fontSize: 16, fontWeight: 600, fontFamily: "var(--font-body)", outline: "none",
-    background: "var(--blanco)",
-  },
-  guion: { fontSize: 18, color: "var(--texto-secundario)", fontWeight: 300 },
-  resultadoArea: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4 },
-  resultadoReal: {
-    fontFamily: "var(--font-display)", fontSize: 22, color: "var(--texto-principal)",
-  },
-  bloqueadoArea: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2 },
-  bloqueadoText: { fontSize: 11, color: "var(--texto-secundario)", fontStyle: "italic" },
-  predCargada: {
-    fontFamily: "var(--font-display)", fontSize: 18, color: "var(--celeste-dark)",
-  },
-  cardFooter: {
-    display: "flex", alignItems: "center", justifyContent: "flex-end",
-    gap: 12, marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--borde)",
-    flexWrap: "wrap",
-  },
-  errorText: { fontSize: 13, color: "#ef4444", flex: 1 },
-  btnActualizar: {
-    background: "var(--celeste)", color: "var(--blanco)", border: "none",
-    padding: "10px 20px", borderRadius: 8, fontSize: 14, fontWeight: 600,
-    cursor: "pointer", fontFamily: "var(--font-body)", transition: "opacity 0.2s",
-  },
-  btnGuardando: { opacity: 0.6 },
-  vacio: {
-    textAlign: "center", padding: "32px 16px",
-    color: "var(--texto-secundario)", fontSize: 14,
-  },
-};

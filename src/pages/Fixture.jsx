@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePartidos, usePosiciones } from "../hooks/useProde";
 
 const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -185,16 +185,26 @@ function CruceCard({ partido }) {
 }
 
 function Eliminatorias({ partidos }) {
-  const byFase = (fase) =>
-    partidos
-      .filter((p) => fase.keys.some((k) => p.ronda?.includes(k) || p.grupo?.includes(k)))
-      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const porFase = useMemo(() => {
+    const map = {};
+    for (const fase of FASES_ELIM) {
+      map[fase.key] = partidos
+        .filter((p) => fase.keys.some((k) => p.ronda?.includes(k) || p.grupo?.includes(k)))
+        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    }
+    return map;
+  }, [partidos]);
 
-  const fasesConDatos = FASES_ELIM.filter((f) => byFase(f).length > 0);
-  const [faseActiva, setFaseActiva] = useState(fasesConDatos[0]?.key ?? "r32");
+  const fasesConDatos = FASES_ELIM.filter((f) => porFase[f.key].length > 0);
+  const [faseActiva, setFaseActiva] = useState("r32");
 
-  const faseActual = FASES_ELIM.find((f) => f.key === faseActiva);
-  const partidosFase = faseActual ? byFase(faseActual) : [];
+  useEffect(() => {
+    if (fasesConDatos.length > 0) {
+      setFaseActiva(fasesConDatos[fasesConDatos.length - 1].key);
+    }
+  }, [partidos.length]);
+
+  const partidosFase = porFase[faseActiva] ?? [];
 
   if (partidos.length === 0) {
     return (
@@ -210,7 +220,7 @@ function Eliminatorias({ partidos }) {
       {/* Tabs de fases */}
       <div style={el.faseTabs}>
         {FASES_ELIM.map((f) => {
-          const tiene = byFase(f).length > 0;
+          const tiene = porFase[f.key].length > 0;
           return (
             <button
               key={f.key}
@@ -617,6 +627,7 @@ const el = {
     fontSize: 10,
     fontWeight: 700,
     color: "#ef4444",
+    animation: "pulse 1.5s infinite",
   },
   fechaWrap: {
     display: "flex",

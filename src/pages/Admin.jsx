@@ -1,5 +1,43 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+
+const TABS_ADMIN = [
+  { key: "principal",  label: "⚙️ Principal" },
+  { key: "usuarios",   label: "👥 Usuarios" },
+  { key: "partidos",   label: "⚽ Partidos" },
+  { key: "utilidades", label: "🔧 Utilidades" },
+  { key: "grupos",     label: "🔑 Grupos" },
+];
+
+function InfoBox({ children }) {
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-[10px] px-4 py-3 mb-5 text-sm leading-relaxed text-foreground">
+      {children}
+    </div>
+  );
+}
+
+function AccionCard({ icono, titulo, desc, children }) {
+  return (
+    <div className="bg-background border border-border rounded-2xl p-5 flex flex-col gap-2 shadow-sm">
+      <div className="text-[28px]">{icono}</div>
+      <div className="font-semibold text-[15px]">{titulo}</div>
+      <div className="text-[13px] text-muted-foreground leading-relaxed flex-1">{desc}</div>
+      {children}
+    </div>
+  );
+}
+
+function CodigoBadge({ children }) {
+  return (
+    <span className="font-mono font-bold tracking-[2px] text-[13px] bg-celeste-light text-celeste-dark px-2 py-0.5 rounded-md">
+      {children}
+    </span>
+  );
+}
 
 function GruposAdmin({ llamarPost, cargando, userId }) {
   const [nombre, setNombre] = useState("");
@@ -7,19 +45,14 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
   const [grupos, setGrupos] = useState([]);
   const [cargandoGrupos, setCargandoGrupos] = useState(true);
 
-  useEffect(() => {
-    cargarGrupos();
-  }, []);
+  useEffect(() => { cargarGrupos(); }, []);
 
   const cargarGrupos = async () => {
     setCargandoGrupos(true);
     try {
       const res = await fetch("/api/admin/acciones", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-id": userId,
-        },
+        headers: { "Content-Type": "application/json", "x-admin-id": userId },
         body: JSON.stringify({ action: "listar-grupos" }),
       });
       const data = await res.json();
@@ -31,11 +64,7 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
   };
 
   const crearGrupo = async () => {
-    await llamarPost(
-      "/api/admin/acciones",
-      { action: "crear-grupo", nombre, codigo },
-      null,
-    );
+    await llamarPost("/api/admin/acciones", { action: "crear-grupo", nombre, codigo }, null);
     setNombre("");
     setCodigo("");
     cargarGrupos();
@@ -43,114 +72,76 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
 
   return (
     <div>
-      <div style={styles.infoBox}>
+      <InfoBox>
         <strong>🔑 Grupos de participantes.</strong> Creá un código por grupo y
         compartíselo a cada grupo de personas que quiera participar en su propio
         ranking separado.
-      </div>
+      </InfoBox>
 
-      {/* Crear grupo */}
-      <div style={{ ...styles.card, marginBottom: 20 }}>
-        <div style={styles.cardTitulo}>Crear nuevo grupo</div>
-        <div style={styles.cardDesc}>
-          El código es lo que los usuarios van a ingresar para unirse. Usá algo
-          fácil de recordar.
+      <div className="bg-background border border-border rounded-2xl p-5 shadow-sm mb-5">
+        <div className="font-semibold text-[15px] mb-1">Crear nuevo grupo</div>
+        <div className="text-[13px] text-muted-foreground mb-3">
+          El código es lo que los usuarios van a ingresar para unirse. Usá algo fácil de recordar.
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            marginTop: 8,
-          }}
-        >
+        <div className="flex flex-col gap-2.5">
           <input
             placeholder="Nombre del grupo (ej: Leibnitz 2026)"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            style={styles.select}
+            className="px-3 py-2 rounded-lg border border-border text-sm outline-none focus:border-celeste transition-colors bg-background"
           />
           <input
             placeholder="Código (ej: LEIBNITZ2026)"
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
             maxLength={20}
-            style={{ ...styles.select, letterSpacing: 2, fontWeight: 700 }}
+            className="px-3 py-2 rounded-lg border border-border text-sm outline-none focus:border-celeste transition-colors bg-background tracking-[2px] font-bold"
           />
-          <button
-            style={styles.btn}
-            disabled={cargando || !nombre.trim() || !codigo.trim()}
+          <Button
             onClick={crearGrupo}
+            disabled={cargando || !nombre.trim() || !codigo.trim()}
+            className="bg-gris-oscuro text-white hover:bg-gris-oscuro/90 self-start"
           >
             {cargando ? "Creando..." : "Crear grupo"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Lista de grupos */}
-      <div style={styles.cardTitulo}>Grupos existentes</div>
-      <p style={{ ...styles.seccionDesc, marginTop: 4 }}>
-        Estos son los grupos creados. Compartí el código con cada grupo de
-        participantes.
+      <div className="font-semibold text-[15px] mb-1">Grupos existentes</div>
+      <p className="text-[13px] text-muted-foreground mb-3">
+        Estos son los grupos creados. Compartí el código con cada grupo de participantes.
       </p>
+
       {cargandoGrupos ? (
-        <div style={{ color: "var(--texto-secundario)", fontSize: 13 }}>
-          Cargando grupos...
-        </div>
+        <div className="text-[13px] text-muted-foreground">Cargando grupos...</div>
       ) : grupos.length === 0 ? (
-        <div style={styles.vacio}>No hay grupos creados todavía</div>
+        <div className="text-center py-8 bg-background border border-border rounded-xl text-sm text-muted-foreground">
+          No hay grupos creados todavía
+        </div>
       ) : (
-        <div style={styles.tablaWrapper}>
-          <table style={styles.tabla}>
-            <thead>
-              <tr>
+        <div className="overflow-x-auto border border-border rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {["Nombre", "Código", "Miembros", "Creado"].map((h) => (
-                  <th key={h} style={styles.th}>
-                    {h}
-                  </th>
+                  <TableHead key={h}>{h}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {grupos.map((g) => (
-                <tr key={g._id} style={styles.tr}>
-                  <td style={styles.td}>
-                    <strong>{g.nombre}</strong>
-                  </td>
-                  <td style={styles.td}>
-                    <span
-                      style={{
-                        fontFamily: "monospace",
-                        fontWeight: 700,
-                        letterSpacing: 2,
-                        fontSize: 13,
-                        background: "var(--celeste-light)",
-                        color: "var(--celeste-dark)",
-                        padding: "2px 8px",
-                        borderRadius: 6,
-                      }}
-                    >
-                      {g.codigo}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={{ fontWeight: 600 }}>{g.miembros}</span>
-                    <span
-                      style={{ color: "var(--texto-secundario)", fontSize: 12 }}
-                    >
-                      {" "}
-                      usuarios
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    {g.creadoAt
-                      ? new Date(g.creadoAt).toLocaleDateString("es-AR")
-                      : "—"}
-                  </td>
-                </tr>
+                <TableRow key={g._id}>
+                  <TableCell className="font-semibold">{g.nombre}</TableCell>
+                  <TableCell><CodigoBadge>{g.codigo}</CodigoBadge></TableCell>
+                  <TableCell>
+                    <span className="font-semibold">{g.miembros}</span>
+                    <span className="text-muted-foreground text-xs"> usuarios</span>
+                  </TableCell>
+                  <TableCell>{g.creadoAt ? new Date(g.creadoAt).toLocaleDateString("es-AR") : "—"}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
@@ -159,12 +150,12 @@ function GruposAdmin({ llamarPost, cargando, userId }) {
 
 export default function Admin() {
   const { user, isAuthenticated } = useAuth0();
-  const [partidos, setPartidos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [cargando, setCargando] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  const [partidos, setPartidos]   = useState([]);
+  const [usuarios, setUsuarios]   = useState([]);
+  const [cargando, setCargando]   = useState(false);
+  const [mensaje, setMensaje]     = useState("");
   const [tipoMensaje, setTipoMensaje] = useState("ok");
-  const [seccion, setSeccion] = useState("principal");
+  const [seccion, setSeccion]     = useState("principal");
   const [partidoSeleccionado, setPartidoSeleccionado] = useState("");
   const [prediccionesPartido, setPrediccionesPartido] = useState([]);
 
@@ -179,9 +170,7 @@ export default function Admin() {
   const cargarPartidos = () => {
     fetch("/api/partidos")
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setPartidos(data);
-      });
+      .then((data) => { if (Array.isArray(data)) setPartidos(data); });
   };
 
   const cargarUsuarios = () => {
@@ -190,9 +179,7 @@ export default function Admin() {
       headers: { "x-admin-id": user?.sub || "" },
     })
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setUsuarios(data);
-      });
+      .then((data) => { if (Array.isArray(data)) setUsuarios(data); });
   };
 
   const mostrarMensaje = (msg, tipo = "ok") => {
@@ -209,10 +196,7 @@ export default function Admin() {
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-id": user.sub,
-        },
+        headers: { "Content-Type": "application/json", "x-admin-id": user.sub },
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -232,67 +216,62 @@ export default function Admin() {
       setCargando(false);
     }
   };
+
   const verPrediccionesPartido = async () => {
     if (!partidoSeleccionado) return;
-    const res = await fetch(
-      `/api/admin/predicciones-partido?partidoId=${partidoSeleccionado}`,
-      { headers: { "x-admin-id": user?.sub || "" } },
-    );
+    const res = await fetch(`/api/admin/predicciones-partido?partidoId=${partidoSeleccionado}`, {
+      headers: { "x-admin-id": user?.sub || "" },
+    });
     const data = await res.json();
     if (Array.isArray(data)) setPrediccionesPartido(data);
     else mostrarMensaje(data.error, "error");
   };
+
   if (!isAuthenticated || !esAdmin) {
     return (
-      <div style={styles.centrado}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🚫</div>
-        <h2 style={styles.titulo}>Acceso restringido</h2>
-        <p style={{ color: "var(--texto-secundario)" }}>
-          Esta sección es solo para administradores.
-        </p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+        <div className="text-5xl mb-3">🚫</div>
+        <h2 className="font-display text-[28px] tracking-[1px] mb-2">Acceso restringido</h2>
+        <p className="text-muted-foreground">Esta sección es solo para administradores.</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={styles.pageHeader}>
-        <h1 style={styles.pageTitle}>PANEL ADMIN</h1>
-        <span style={{ fontSize: 13, color: "var(--texto-secundario)" }}>
+      <div className="flex items-baseline gap-3 mb-4 flex-wrap">
+        <h1 className="font-display text-[36px] tracking-[2px]">PANEL ADMIN</h1>
+        <span className="text-[13px] text-muted-foreground">
           {usuarios.length} usuarios · {partidos.length} partidos
         </span>
       </div>
 
       {mensaje && (
-        <div
-          style={{
-            ...styles.mensajeBox,
-            background: tipoMensaje === "ok" ? "#dcfce7" : "#fee2e2",
-            color: tipoMensaje === "ok" ? "#166534" : "#991b1b",
-            borderColor: tipoMensaje === "ok" ? "#86efac" : "#fca5a5",
-          }}
-        >
+        <div className={cn(
+          "border rounded-[10px] px-4 py-2.5 mb-4 text-sm",
+          tipoMensaje === "ok"
+            ? "bg-[#dcfce7] text-[#166534] border-[#86efac]"
+            : "bg-[#fee2e2] text-[#991b1b] border-[#fca5a5]"
+        )}>
           {tipoMensaje === "ok" ? "✓" : "⚠"} {mensaje}
         </div>
       )}
 
-      <div style={styles.tabs}>
-        {[
-          { key: "principal", label: "⚙️ Principal" },
-          { key: "usuarios", label: `👥 Usuarios (${usuarios.length})` },
-          { key: "partidos", label: `⚽ Partidos (${partidos.length})` },
-          { key: "utilidades", label: "🔧 Utilidades" },
-          { key: "grupos", label: "🔑 Grupos" },
-        ].map((t) => (
+      {/* Tabs */}
+      <div className="flex gap-1.5 flex-wrap mb-5">
+        {TABS_ADMIN.map((t) => (
           <button
             key={t.key}
             onClick={() => setSeccion(t.key)}
-            style={{
-              ...styles.tab,
-              ...(seccion === t.key ? styles.tabActivo : {}),
-            }}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg border-[1.5px] text-[13px] font-medium transition-all",
+              seccion === t.key
+                ? "bg-gris-oscuro border-gris-oscuro text-white font-semibold"
+                : "bg-background border-border text-muted-foreground"
+            )}
           >
-            {t.label}
+            {t.key === "usuarios" ? `👥 Usuarios (${usuarios.length})` :
+             t.key === "partidos" ? `⚽ Partidos (${partidos.length})` : t.label}
           </button>
         ))}
       </div>
@@ -300,97 +279,55 @@ export default function Admin() {
       {/* PRINCIPAL */}
       {seccion === "principal" && (
         <div>
-          <div style={styles.infoBox}>
+          <InfoBox>
             <strong>📋 Flujo normal del Mundial:</strong>
-            <ol style={{ margin: "8px 0 0 20px", lineHeight: 2 }}>
-              <li>
-                Cargá los partidos del Mundial antes de que empiece (junio 2026)
-              </li>
-              <li>
-                Los participantes cargan sus prodes en la sección Partidos
-              </li>
-              <li>
-                Durante el torneo, sincronizá los resultados manualmente desde
-                acá cuando quieras.
-              </li>
-              <li>
-                La sincronización bloquea predicciones y calcula puntos sola —
-                no hace falta recalcular aparte.
-              </li>
+            <ol className="mt-2 ml-5 leading-loose list-decimal">
+              <li>Cargá los partidos del Mundial antes de que empiece (junio 2026)</li>
+              <li>Los participantes cargan sus prodes en la sección Partidos</li>
+              <li>Durante el torneo, sincronizá los resultados manualmente desde acá cuando quieras.</li>
+              <li>La sincronización bloquea predicciones y calcula puntos sola — no hace falta recalcular aparte.</li>
             </ol>
-          </div>
-          <div style={styles.grid}>
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>⚽</div>
-              <div style={styles.cardTitulo}>Cargar Mundial 2026</div>
-              <div style={styles.cardDesc}>
-                Carga los 72 partidos de fase de grupos con fechas, grupos y
-                banderas reales.
-                <strong
-                  style={{ color: "#ef4444", display: "block", marginTop: 4 }}
-                >
-                  ⚠ Esto borra los partidos de prueba existentes.
-                </strong>
-              </div>
-              <button
-                style={styles.btn}
+          </InfoBox>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            <AccionCard icono="⚽" titulo="Cargar Mundial 2026" desc={
+              <>
+                Carga los 72 partidos de fase de grupos con fechas, grupos y banderas reales.
+                <strong className="text-red-500 block mt-1">⚠ Esto borra los partidos de prueba existentes.</strong>
+              </>
+            }>
+              <Button
+                className="bg-gris-oscuro text-white hover:bg-gris-oscuro/90 mt-1"
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost(
-                    "/api/admin/cargar-mundial",
-                    {},
-                    "¿Cargar los partidos del Mundial? Esto va a borrar los partidos actuales.",
-                  )
-                }
+                onClick={() => llamarPost("/api/admin/cargar-mundial", {}, "¿Cargar los partidos del Mundial? Esto va a borrar los partidos actuales.")}
               >
                 {cargando ? "Cargando..." : "Cargar partidos"}
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🔄</div>
-              <div style={styles.cardTitulo}>Sincronizar resultados</div>
-              <div style={styles.cardDesc}>
-                Trae los resultados desde football-data.org, bloquea las
-                predicciones de partidos que ya empezaron y calcula los puntos
-                automáticamente. El cron lo corre solo cada 30 min durante el
-                Mundial.
-              </div>
-              <button
-                style={styles.btn}
+            <AccionCard icono="🔄" titulo="Sincronizar resultados" desc="Trae los resultados desde football-data.org, bloquea las predicciones de partidos que ya empezaron y calcula los puntos automáticamente. El cron lo corre solo cada 30 min durante el Mundial.">
+              <Button
+                className="bg-gris-oscuro text-white hover:bg-gris-oscuro/90 mt-1"
                 disabled={cargando}
                 onClick={() => llamarPost("/api/admin/sincronizar", {})}
               >
                 {cargando ? "Sincronizando..." : "Sincronizar ahora"}
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
 
-
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🗑️</div>
-              <div style={styles.cardTitulo}>Limpiar partidos</div>
-              <div style={styles.cardDesc}>
+            <AccionCard icono="🗑️" titulo="Limpiar partidos" desc={
+              <>
                 Borra todos los partidos de la base de datos.
-                <strong
-                  style={{ color: "#ef4444", display: "block", marginTop: 4 }}
-                >
-                  ⚠ Acción irreversible. Las predicciones quedan huérfanas.
-                </strong>
-              </div>
-              <button
-                style={{ ...styles.btn, background: "#ef4444" }}
+                <strong className="text-red-500 block mt-1">⚠ Acción irreversible. Las predicciones quedan huérfanas.</strong>
+              </>
+            }>
+              <Button
+                className="bg-red-500 text-white hover:bg-red-600 mt-1"
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost(
-                    "/api/admin/acciones",
-                    { action: "limpiar-partidos" },
-                    "¿Seguro? Esto borra TODOS los partidos y es irreversible.",
-                  )
-                }
+                onClick={() => llamarPost("/api/admin/acciones", { action: "limpiar-partidos" }, "¿Seguro? Esto borra TODOS los partidos y es irreversible.")}
               >
                 Limpiar todo
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
           </div>
         </div>
       )}
@@ -398,140 +335,68 @@ export default function Admin() {
       {/* USUARIOS */}
       {seccion === "usuarios" && (
         <div>
-          <p style={styles.seccionDesc}>
-            Lista de todos los usuarios registrados. Podés ver sus estadísticas
-            y borrar sus predicciones si hay algún problema.
+          <p className="text-sm text-muted-foreground mb-4">
+            Lista de todos los usuarios registrados. Podés ver sus estadísticas y borrar sus predicciones si hay algún problema.
           </p>
           {usuarios.length === 0 ? (
-            <div style={styles.vacio}>No hay usuarios registrados todavía</div>
+            <div className="text-center py-8 bg-background border border-border rounded-xl text-sm text-muted-foreground">
+              No hay usuarios registrados todavía
+            </div>
           ) : (
-            <div style={styles.tablaWrapper}>
-              <table style={styles.tabla}>
-                <thead>
-                  <tr>
-                    {[
-                      "Usuario",
-                      "Email",
-                      "Grupo",
-                      "Prodes",
-                      "Puntos",
-                      "Último acceso",
-                      "Acciones",
-                    ].map((h) => (
-                      <th key={h} style={styles.th}>
-                        {h}
-                      </th>
+            <div className="overflow-x-auto border border-border rounded-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Usuario", "Email", "Grupo", "Prodes", "Puntos", "Último acceso", "Acciones"].map((h) => (
+                      <TableHead key={h}>{h}</TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {usuarios.map((u) => (
-                    <tr key={u.userId} style={styles.tr}>
-                      <td style={styles.td}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                          }}
-                        >
-                          {u.foto && (
-                            <img
-                              src={u.foto}
-                              alt=""
-                              style={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: "50%",
-                              }}
-                            />
-                          )}
-                          <span style={{ fontWeight: 500 }}>
-                            {u.nombre || "Sin nombre"}
-                          </span>
+                    <TableRow key={u.userId}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {u.foto && <img src={u.foto} alt="" className="w-7 h-7 rounded-full" />}
+                          <span className="font-medium">{u.nombre || "Sin nombre"}</span>
                         </div>
-                      </td>
-                      <td style={styles.td}>{u.email}</td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color:
-                              u.grupoNombre === "—"
-                                ? "var(--texto-secundario)"
-                                : "var(--celeste-dark)",
-                            background:
-                              u.grupoNombre === "—"
-                                ? "#f1f5f9"
-                                : "var(--celeste-light)",
-                            padding: "2px 8px",
-                            borderRadius: 6,
-                          }}
-                        >
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{u.email}</TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded-md",
+                          u.grupoNombre === "—"
+                            ? "bg-slate-100 text-muted-foreground"
+                            : "bg-celeste-light text-celeste-dark"
+                        )}>
                           {u.grupoNombre}
                         </span>
-                      </td>
-                      <td style={styles.td}>{u.totalPredicciones}</td>
-                      <td style={styles.td}>
-                        <strong style={{ color: "var(--celeste-dark)" }}>
-                          {u.puntos} pts
-                        </strong>
-                      </td>
-                      <td style={styles.td}>
-                        {u.lastLogin
-                          ? new Date(u.lastLogin).toLocaleDateString("es-AR")
-                          : "-"}
-                      </td>
-                      <td style={styles.td}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 4,
-                          }}
-                        >
+                      </TableCell>
+                      <TableCell>{u.totalPredicciones}</TableCell>
+                      <TableCell className="font-bold text-celeste-dark">{u.puntos} pts</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString("es-AR") : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
                           <button
-                            style={{
-                              ...styles.btnPequeno,
-                              background: "#fee2e2",
-                              color: "#991b1b",
-                            }}
-                            onClick={() =>
-                              llamarPost(
-                                "/api/admin/acciones",
-                                {
-                                  action: "limpiar-predicciones",
-                                  targetUserId: u.userId,
-                                },
-                                `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`,
-                              )
-                            }
+                            className="bg-[#fee2e2] text-[#991b1b] border-0 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer"
+                            onClick={() => llamarPost("/api/admin/acciones", { action: "limpiar-predicciones", targetUserId: u.userId }, `¿Borrar todas las predicciones de ${u.nombre}? Esta acción es irreversible.`)}
                           >
                             Borrar prodes
                           </button>
                           <button
-                            style={{
-                              ...styles.btnPequeno,
-                              background: "#fef3c7",
-                              color: "#92400e",
-                            }}
-                            onClick={() =>
-                              llamarPost(
-                                "/api/admin/acciones",
-                                { action: "resetear-grupo", targetUserId: u.userId },
-                                `¿Resetear el grupo de ${u.nombre}? Podrá ingresar un nuevo código.`,
-                              )
-                            }
+                            className="bg-[#fef3c7] text-[#92400e] border-0 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer"
+                            onClick={() => llamarPost("/api/admin/acciones", { action: "resetear-grupo", targetUserId: u.userId }, `¿Resetear el grupo de ${u.nombre}? Podrá ingresar un nuevo código.`)}
                           >
                             Resetear grupo
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
@@ -540,195 +405,124 @@ export default function Admin() {
       {/* PARTIDOS */}
       {seccion === "partidos" && (
         <div>
-          <p style={styles.seccionDesc}>
-            Lista de partidos en la base de datos. Los partidos con fondo
-            amarillo son de Argentina.
+          <p className="text-sm text-muted-foreground mb-4">
+            Lista de partidos en la base de datos. Los partidos con fondo amarillo son de Argentina.
           </p>
-          <div
-            style={{
-              ...styles.card,
-              marginBottom: 16,
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-            }}
-          >
-            <div style={styles.cardTitulo}>
-              🔍 Ver predicciones de un partido
-            </div>
-            <div style={styles.cardDesc}>
+
+          <div className="bg-background border border-border rounded-2xl p-5 shadow-sm mb-4">
+            <div className="font-semibold text-[15px] mb-1">🔍 Ver predicciones de un partido</div>
+            <div className="text-[13px] text-muted-foreground mb-3">
               Seleccioná un partido para ver qué pronosticó cada participante.
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="flex gap-2 flex-wrap">
               <select
                 value={partidoSeleccionado}
-                onChange={(e) => {
-                  setPartidoSeleccionado(e.target.value);
-                  setPrediccionesPartido([]);
-                }}
-                style={styles.select}
+                onChange={(e) => { setPartidoSeleccionado(e.target.value); setPrediccionesPartido([]); }}
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-border text-sm outline-none focus:border-celeste transition-colors bg-background"
               >
                 <option value="">— Seleccioná un partido —</option>
                 {partidos.map((p) => (
                   <option key={p._id} value={p._id}>
                     {p.local} vs {p.visitante} ({p.grupo})
-                    {p.estado === "FT"
-                      ? ` — ${p.golesLocal}-${p.golesVisitante}`
-                      : " — Pendiente"}
+                    {p.estado === "FT" ? ` — ${p.golesLocal}-${p.golesVisitante}` : " — Pendiente"}
                   </option>
                 ))}
               </select>
-              <button
-                style={styles.btn}
+              <Button
+                className="bg-gris-oscuro text-white hover:bg-gris-oscuro/90"
                 onClick={verPrediccionesPartido}
                 disabled={!partidoSeleccionado || cargando}
               >
                 Ver predicciones
-              </button>
+              </Button>
             </div>
+
             {prediccionesPartido.length > 0 && (
-              <div style={styles.tablaWrapper}>
-                <table style={styles.tabla}>
-                  <thead>
-                    <tr>
-                      {["Usuario", "Pronóstico", "Puntos", "Cargado"].map(
-                        (h) => (
-                          <th key={h} style={styles.th}>
-                            {h}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="overflow-x-auto border border-border rounded-xl mt-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {["Usuario", "Pronóstico", "Puntos", "Cargado"].map((h) => (
+                        <TableHead key={h}>{h}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {prediccionesPartido.map((p) => (
-                      <tr key={p._id} style={styles.tr}>
-                        <td style={styles.td}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            {p.foto && (
-                              <img
-                                src={p.foto}
-                                alt=""
-                                style={{
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: "50%",
-                                }}
-                              />
-                            )}
+                      <TableRow key={p._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {p.foto && <img src={p.foto} alt="" className="w-6 h-6 rounded-full" />}
                             {p.nombre}
                           </div>
-                        </td>
-                        <td style={styles.td}>
-                          <strong>
-                            {p.golesLocal} - {p.golesVisitante}
-                          </strong>
-                        </td>
-                        <td style={styles.td}>
+                        </TableCell>
+                        <TableCell className="font-bold">{p.golesLocal} - {p.golesVisitante}</TableCell>
+                        <TableCell>
                           {p.puntos === null ? (
-                            <span style={{ color: "var(--texto-secundario)" }}>
-                              Pendiente
-                            </span>
+                            <span className="text-muted-foreground">Pendiente</span>
                           ) : p.puntos === 3 ? (
-                            <span style={{ color: "#166534", fontWeight: 700 }}>
-                              ⭐ 3 pts
-                            </span>
+                            <span className="text-[#166534] font-bold">⭐ 3 pts</span>
                           ) : p.puntos === 1 ? (
-                            <span style={{ color: "#1e40af", fontWeight: 700 }}>
-                              ✓ 1 pt
-                            </span>
+                            <span className="text-[#1e40af] font-bold">✓ 1 pt</span>
                           ) : (
-                            <span style={{ color: "#64748b" }}>0 pts</span>
+                            <span className="text-muted-foreground">0 pts</span>
                           )}
-                        </td>
-                        <td style={styles.td}>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
                           {new Date(p.createdAt).toLocaleDateString("es-AR")}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
             {partidoSeleccionado && prediccionesPartido.length === 0 && (
-              <p style={{ color: "var(--texto-secundario)", fontSize: 13 }}>
-                Nadie cargó prode para este partido todavía.
-              </p>
+              <p className="text-muted-foreground text-[13px] mt-3">Nadie cargó prode para este partido todavía.</p>
             )}
           </div>
+
           {partidos.length === 0 ? (
-            <div style={styles.vacio}>
-              No hay partidos — usá "Cargar Mundial 2026" en la sección
-              Principal
+            <div className="text-center py-8 bg-background border border-border rounded-xl text-sm text-muted-foreground">
+              No hay partidos — usá "Cargar Mundial 2026" en la sección Principal
             </div>
           ) : (
-            <div style={styles.tablaWrapper}>
-              <table style={styles.tabla}>
-                <thead>
-                  <tr>
-                    {[
-                      "Grupo",
-                      "Local",
-                      "Visitante",
-                      "Fecha",
-                      "Estado",
-                      "Resultado",
-                    ].map((h) => (
-                      <th key={h} style={styles.th}>
-                        {h}
-                      </th>
+            <div className="overflow-x-auto border border-border rounded-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Grupo", "Local", "Visitante", "Fecha", "Estado", "Resultado"].map((h) => (
+                      <TableHead key={h}>{h}</TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {partidos.map((p) => (
-                    <tr
+                    <TableRow
                       key={p._id}
-                      style={{
-                        ...styles.tr,
-                        ...(p.local === "Argentina" ||
-                        p.visitante === "Argentina"
-                          ? { background: "#fffbeb" }
-                          : {}),
-                      }}
+                      className={p.local === "Argentina" || p.visitante === "Argentina" ? "bg-amber-50" : ""}
                     >
-                      <td style={styles.td}>{p.grupo}</td>
-                      <td style={styles.td}>{p.local}</td>
-                      <td style={styles.td}>{p.visitante}</td>
-                      <td style={styles.td}>
+                      <TableCell className="text-muted-foreground text-sm">{p.grupo}</TableCell>
+                      <TableCell>{p.local}</TableCell>
+                      <TableCell>{p.visitante}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {new Date(p.fecha).toLocaleDateString("es-AR")}
-                      </td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.estadoBadge,
-                            background:
-                              p.estado === "FT" ? "#dcfce7" : "#f1f5f9",
-                            color: p.estado === "FT" ? "#166534" : "#475569",
-                          }}
-                        >
-                          {p.estado === "FT"
-                            ? "Terminado"
-                            : p.estado === "NS"
-                              ? "Pendiente"
-                              : p.estado}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "text-[11px] px-2 py-0.5 rounded-md font-semibold",
+                          p.estado === "FT" ? "bg-[#dcfce7] text-[#166534]" : "bg-slate-100 text-slate-500"
+                        )}>
+                          {p.estado === "FT" ? "Terminado" : p.estado === "NS" ? "Pendiente" : p.estado}
                         </span>
-                      </td>
-                      <td style={styles.td}>
-                        {p.estado === "FT"
-                          ? `${p.golesLocal} - ${p.golesVisitante}`
-                          : "-"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>
+                        {p.estado === "FT" ? `${p.golesLocal} - ${p.golesVisitante}` : "-"}
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
@@ -737,252 +531,62 @@ export default function Admin() {
       {/* UTILIDADES */}
       {seccion === "utilidades" && (
         <div>
-          <div style={styles.infoBox}>
+          <InfoBox>
             <strong>🔧 Estas herramientas son para casos de emergencia.</strong>{" "}
-            Usálas solo si hay un problema específico con un usuario o con los
-            puntos.
-          </div>
-          <div style={styles.grid}>
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🔁</div>
-              <div style={styles.cardTitulo}>Resetear todos los puntos</div>
-              <div style={styles.cardDesc}>
+            Usálas solo si hay un problema específico con un usuario o con los puntos.
+          </InfoBox>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            <AccionCard icono="🔁" titulo="Resetear todos los puntos" desc={
+              <>
                 Pone todos los puntos en null para poder recalcular desde cero.
-                <strong
-                  style={{ color: "#92400e", display: "block", marginTop: 4 }}
-                >
-                  ⚠ Después usá el botón "Recalcular puntos" más abajo.
-                </strong>
-              </div>
-              <button
-                style={{ ...styles.btn, background: "#f59e0b" }}
+                <strong className="text-amber-700 block mt-1">⚠ Después usá el botón "Recalcular puntos" más abajo.</strong>
+              </>
+            }>
+              <Button
+                className="bg-amber-500 text-white hover:bg-amber-600 mt-1"
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost(
-                    "/api/admin/acciones",
-                    { action: "resetear-puntos" },
-                    "¿Resetear todos los puntos? Después tenés que recalcular manualmente.",
-                  )
-                }
+                onClick={() => llamarPost("/api/admin/acciones", { action: "resetear-puntos" }, "¿Resetear todos los puntos? Después tenés que recalcular manualmente.")}
               >
                 {cargando ? "Reseteando..." : "Resetear puntos"}
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🏆</div>
-              <div style={styles.cardTitulo}>Recalcular puntos</div>
-              <div style={styles.cardDesc}>
+            <AccionCard icono="🏆" titulo="Recalcular puntos" desc={
+              <>
                 Recalcula puntos manualmente para todos los partidos terminados.
-                <strong
-                  style={{ color: "#92400e", display: "block", marginTop: 4 }}
-                >
-                  ⚠ Solo necesario si algo falló en la sincronización automática.
-                </strong>
-              </div>
-              <button
-                style={styles.btn}
+                <strong className="text-amber-700 block mt-1">⚠ Solo necesario si algo falló en la sincronización automática.</strong>
+              </>
+            }>
+              <Button
+                className="bg-gris-oscuro text-white hover:bg-gris-oscuro/90 mt-1"
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost("/api/admin/acciones", { action: "recalcular" })
-                }
+                onClick={() => llamarPost("/api/admin/acciones", { action: "recalcular" })}
               >
                 {cargando ? "Calculando..." : "Recalcular"}
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
 
-            <div style={styles.card}>
-              <div style={styles.cardIcono}>🗑️</div>
-              <div style={styles.cardTitulo}>Borrar todas las predicciones</div>
-              <div style={styles.cardDesc}>
+            <AccionCard icono="🗑️" titulo="Borrar todas las predicciones" desc={
+              <>
                 Borra las predicciones de todos los usuarios.
-                <strong
-                  style={{ color: "#ef4444", display: "block", marginTop: 4 }}
-                >
-                  ⚠ Acción irreversible. Para borrar las de un usuario
-                  específico usá la sección Usuarios.
-                </strong>
-              </div>
-              <button
-                style={{ ...styles.btn, background: "#ef4444" }}
+                <strong className="text-red-500 block mt-1">⚠ Acción irreversible. Para borrar las de un usuario específico usá la sección Usuarios.</strong>
+              </>
+            }>
+              <Button
+                className="bg-red-500 text-white hover:bg-red-600 mt-1"
                 disabled={cargando}
-                onClick={() =>
-                  llamarPost(
-                    "/api/admin/acciones",
-                    { action: "limpiar-predicciones" },
-                    "¿Borrar TODAS las predicciones de TODOS los usuarios? Esto es irreversible.",
-                  )
-                }
+                onClick={() => llamarPost("/api/admin/acciones", { action: "limpiar-predicciones" }, "¿Borrar TODAS las predicciones de TODOS los usuarios? Esto es irreversible.")}
               >
                 {cargando ? "Borrando..." : "Borrar todo"}
-              </button>
-            </div>
+              </Button>
+            </AccionCard>
           </div>
         </div>
       )}
+
       {seccion === "grupos" && (
-        <GruposAdmin
-          llamarPost={llamarPost}
-          cargando={cargando}
-          userId={user.sub}
-        />
+        <GruposAdmin llamarPost={llamarPost} cargando={cargando} userId={user.sub} />
       )}
     </div>
   );
 }
-
-const styles = {
-  centrado: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "50vh",
-    textAlign: "center",
-  },
-  titulo: { fontFamily: "var(--font-display)", fontSize: 28, letterSpacing: 1 },
-  pageHeader: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: 12,
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  pageTitle: {
-    fontFamily: "var(--font-display)",
-    fontSize: 36,
-    letterSpacing: 2,
-  },
-  mensajeBox: {
-    border: "1px solid",
-    borderRadius: 10,
-    padding: "10px 16px",
-    marginBottom: 16,
-    fontSize: 14,
-  },
-  tabs: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 },
-  tab: {
-    background: "var(--blanco)",
-    border: "1.5px solid #1a1a2e",
-    color: "var(--texto-secundario)",
-    padding: "7px 14px",
-    borderRadius: 8,
-    fontSize: 13,
-    cursor: "pointer",
-    fontFamily: "var(--font-body)",
-    outline: "none",
-  },
-  tabActivo: {
-    background: "var(--gris-oscuro)",
-    borderColor: "var(--gris-oscuro)",
-    color: "var(--blanco)",
-  },
-  infoBox: {
-    background: "#eff6ff",
-    border: "1px solid #bfdbfe",
-    borderRadius: 10,
-    padding: "12px 16px",
-    marginBottom: 20,
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "var(--texto-principal)",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 16,
-  },
-  card: {
-    background: "var(--blanco)",
-    border: "1px solid var(--borde)",
-    borderRadius: 16,
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)",
-  },
-  cardIcono: { fontSize: 28 },
-  cardTitulo: { fontWeight: 600, fontSize: 15 },
-  cardDesc: {
-    fontSize: 13,
-    color: "var(--texto-secundario)",
-    lineHeight: 1.6,
-    flex: 1,
-  },
-  btn: {
-    background: "var(--gris-oscuro)",
-    color: "var(--blanco)",
-    border: "none",
-    padding: "10px 16px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-    marginTop: 4,
-    fontFamily: "var(--font-body)",
-  },
-  btnPequeno: {
-    border: "none",
-    padding: "4px 10px",
-    borderRadius: 6,
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "var(--font-body)",
-  },
-  seccionDesc: {
-    fontSize: 14,
-    color: "var(--texto-secundario)",
-    marginBottom: 16,
-  },
-  select: {
-    flex: 1,
-    minWidth: 200,
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--borde)",
-    fontSize: 13,
-    fontFamily: "var(--font-body)",
-    outline: "none",
-    background: "var(--blanco)",
-  },
-  vacio: {
-    textAlign: "center",
-    padding: "32px",
-    background: "var(--blanco)",
-    borderRadius: 12,
-    border: "1px solid var(--borde)",
-    color: "var(--texto-secundario)",
-  },
-  tablaWrapper: {
-    overflowX: "auto",
-    borderRadius: 12,
-    border: "1px solid var(--borde)",
-  },
-  tabla: {
-    width: "100%",
-    borderCollapse: "collapse",
-    background: "var(--blanco)",
-    fontSize: 14,
-  },
-  th: {
-    padding: "10px 14px",
-    textAlign: "left",
-    fontWeight: 600,
-    fontSize: 12,
-    color: "var(--texto-secundario)",
-    background: "var(--gris-suave)",
-    borderBottom: "1px solid var(--borde)",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  tr: { borderBottom: "1px solid var(--borde)" },
-  td: { padding: "10px 14px", color: "var(--texto-principal)" },
-  estadoBadge: {
-    fontSize: 11,
-    padding: "2px 8px",
-    borderRadius: 6,
-    fontWeight: 600,
-  },
-};

@@ -1,16 +1,38 @@
 import { useState, useEffect, useMemo } from "react";
 import { usePartidos, usePosiciones } from "../hooks/useProde";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 const LETRAS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
+const MAIN_TABS = [
+  { key: "fixture",       label: "Fixture" },
+  { key: "posiciones",    label: "Posiciones" },
+  { key: "eliminatorias", label: "Eliminatorias" },
+];
+
+const FASES_ELIM = [
+  { key: "r32",   label: "16avos",    keys: ["Round of 32", "16avos"] },
+  { key: "r16",   label: "Octavos",   keys: ["Round of 16", "Octavos"] },
+  { key: "qf",    label: "Cuartos",   keys: ["Quarter", "Cuartos"] },
+  { key: "sf",    label: "Semis",     keys: ["Semi", "Semis"] },
+  { key: "final", label: "Final",     keys: ["Final"] },
+  { key: "3er",   label: "3° Puesto", keys: ["Third", "3er", "3°", "Tercer"] },
+];
+
+// ---------- sub-componentes ----------
+
 function GrupoSelector({ grupos, activo, onSelect }) {
   return (
-    <div style={styles.grupoSelector}>
+    <div className="flex gap-1.5 flex-wrap mb-4">
       {grupos.map((g) => (
         <button
           key={g}
           onClick={() => onSelect(g)}
-          style={{ ...styles.grupoBtn, ...(activo === g ? styles.grupoBtnActivo : {}) }}
+          className={cn(
+            "w-9 h-9 rounded-full border-[1.5px] border-border bg-background text-muted-foreground text-[13px] font-semibold flex items-center justify-center transition-all",
+            activo === g && "bg-gris-oscuro border-gris-oscuro text-white"
+          )}
         >
           {g}
         </button>
@@ -23,45 +45,45 @@ function FilaPartido({ partido }) {
   const yaJugo = ["FT", "AET", "PEN"].includes(partido.estado);
   const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
 
-  const fecha = new Date(partido.fecha).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "short",
-  });
-  const hora = new Date(partido.fecha).toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const fecha = new Date(partido.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+  const hora  = new Date(partido.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div style={styles.filaPartido}>
-      <div style={styles.equipoLocal}>
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-2.5 px-1">
+      <div className="flex items-center gap-2">
         {partido.banderaLocal && (
-          <img src={partido.banderaLocal} alt={partido.local} style={styles.bandera}
+          <img src={partido.banderaLocal} alt={partido.local}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
-        <span style={styles.nombreEquipo}>{partido.local}</span>
+        <span className="text-sm font-medium">{partido.local}</span>
       </div>
 
-      <div style={styles.centroPartido}>
+      <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
         {yaJugo || enJuego ? (
-          <div style={styles.marcadorFinal}>
-            <span>{partido.golesLocal ?? "-"}</span>
-            <span style={{ color: "var(--texto-secundario)", margin: "0 4px" }}>-</span>
-            <span>{partido.golesVisitante ?? "-"}</span>
-          </div>
+          <span className="font-display text-[22px]">
+            {partido.golesLocal ?? "-"}
+            <span className="text-muted-foreground mx-1">-</span>
+            {partido.golesVisitante ?? "-"}
+          </span>
         ) : (
-          <div style={styles.fechaHora}>
-            <span style={styles.fechaTexto}>{fecha}</span>
-            <span style={styles.horaTexto}>{hora}</span>
+          <div className="flex flex-col items-center">
+            <span className="text-[13px] text-muted-foreground font-medium">{fecha}</span>
+            <span className="text-[11px] text-muted-foreground">{hora}</span>
           </div>
         )}
-        {enJuego && <span style={styles.badgeLive}>● EN VIVO</span>}
+        {enJuego && (
+          <span className="text-[10px] font-bold text-error" style={{ animation: "pulse 1.5s infinite" }}>
+            ● EN VIVO
+          </span>
+        )}
       </div>
 
-      <div style={styles.equipoVisitante}>
-        <span style={styles.nombreEquipo}>{partido.visitante}</span>
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm font-medium">{partido.visitante}</span>
         {partido.banderaVisitante && (
-          <img src={partido.banderaVisitante} alt={partido.visitante} style={styles.bandera}
+          <img src={partido.banderaVisitante} alt={partido.visitante}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
       </div>
@@ -71,112 +93,96 @@ function FilaPartido({ partido }) {
 
 function TablaGrupo({ equipos }) {
   if (!equipos || equipos.length === 0) {
-    return <div style={styles.vacio}>Cargando posiciones...</div>;
+    return <div className="text-center py-8 text-sm text-muted-foreground">Cargando posiciones...</div>;
   }
 
   return (
-    <div style={styles.tablaWrapper}>
-      <table style={styles.tabla}>
-        <thead>
-          <tr>
-            <th style={styles.th}>#</th>
-            <th style={{ ...styles.th, textAlign: "left" }}>Equipo</th>
+    <div className="overflow-x-auto -mx-1">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-center w-10">#</TableHead>
+            <TableHead>Equipo</TableHead>
             {["PJ", "G", "E", "P", "DG", "Pts"].map((h) => (
-              <th key={h} style={styles.th}>{h}</th>
+              <TableHead key={h} className="text-center">{h}</TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {equipos.map((eq, i) => (
-            <tr key={eq.nombre} style={{ ...styles.tr, ...(i < 2 ? styles.trClasifica : {}) }}>
-              <td style={{ ...styles.td, color: "var(--texto-secundario)", fontWeight: 600 }}>
-                {i + 1}
-              </td>
-              <td style={styles.td}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <TableRow key={eq.nombre} className={i < 2 ? "bg-green-50" : ""}>
+              <TableCell className="text-center text-muted-foreground font-semibold">{i + 1}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
                   {eq.bandera && (
-                    <img src={eq.bandera} alt={eq.nombre} style={styles.banderaTabla}
+                    <img src={eq.bandera} alt={eq.nombre}
+                      className="w-6 h-4 object-cover rounded-sm border border-border shrink-0"
                       onError={(e) => { e.target.style.display = "none"; }} />
                   )}
-                  <span style={{ fontWeight: 500 }}>{eq.nombre}</span>
+                  <span className="font-medium">{eq.nombre}</span>
                 </div>
-              </td>
+              </TableCell>
               {[eq.pj, eq.g, eq.e, eq.p, eq.dg, eq.pts].map((v, j) => (
-                <td key={j} style={{
-                  ...styles.td,
-                  fontWeight: j === 5 ? 700 : 400,
-                  color: j === 5 ? "var(--texto-principal)" : "var(--texto-secundario)",
-                }}>
+                <TableCell key={j} className={cn(
+                  "text-center",
+                  j === 5 ? "font-bold text-foreground" : "text-muted-foreground"
+                )}>
                   {v}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
 
-const FASES_ELIM = [
-  { key: "r32",   label: "16avos",   keys: ["Round of 32", "16avos"] },
-  { key: "r16",   label: "Octavos",  keys: ["Round of 16", "Octavos"] },
-  { key: "qf",    label: "Cuartos",  keys: ["Quarter", "Cuartos"] },
-  { key: "sf",    label: "Semis",    keys: ["Semi", "Semis"] },
-  { key: "final", label: "Final",    keys: ["Final"] },
-  { key: "3er",   label: "3° Puesto", keys: ["Third", "3er", "3°", "Tercer"] },
-];
-
 function CruceCard({ partido }) {
-  const yaJugo = ["FT", "AET", "PEN"].includes(partido.estado);
+  const yaJugo  = ["FT", "AET", "PEN"].includes(partido.estado);
   const enJuego = ["1H", "2H", "HT", "ET", "BT"].includes(partido.estado);
   const pendiente = (nombre) => !nombre || nombre === "Por definir";
 
-  const fecha = new Date(partido.fecha).toLocaleDateString("es-AR", {
-    weekday: "short", day: "2-digit", month: "short",
-  });
-  const hora = new Date(partido.fecha).toLocaleTimeString("es-AR", {
-    hour: "2-digit", minute: "2-digit",
-  });
+  const fecha = new Date(partido.fecha).toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short" });
+  const hora  = new Date(partido.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div style={el.card}>
-      {/* Equipo local */}
-      <div style={el.equipo}>
+    <div className="bg-background border border-border rounded-lg px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 shadow-sm">
+      <div className="flex items-center gap-2">
         {partido.banderaLocal && !pendiente(partido.local) && (
-          <img src={partido.banderaLocal} alt={partido.local} style={el.bandera}
+          <img src={partido.banderaLocal} alt={partido.local}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
-        <span style={pendiente(partido.local) ? el.equipoPendiente : el.equipoNombre}>
+        <span className={pendiente(partido.local) ? "text-[13px] text-muted-foreground italic" : "text-sm font-semibold"}>
           {pendiente(partido.local) ? "Por definir" : partido.local}
         </span>
       </div>
 
-      {/* Centro */}
-      <div style={el.centro}>
+      <div className="flex flex-col items-center gap-1 min-w-[90px]">
         {yaJugo || enJuego ? (
-          <div style={el.marcadorWrap}>
-            <span style={el.marcador}>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="font-display text-[22px]">
               {partido.golesLocal ?? "–"} - {partido.golesVisitante ?? "–"}
             </span>
-            {yaJugo && <span style={el.badgeFin}>FIN</span>}
-            {enJuego && <span style={el.badgeLive}>● EN VIVO</span>}
+            {yaJugo  && <span className="text-[10px] font-bold text-muted-foreground tracking-wide uppercase">FIN</span>}
+            {enJuego && <span className="text-[10px] font-bold text-error" style={{ animation: "pulse 1.5s infinite" }}>● EN VIVO</span>}
           </div>
         ) : (
-          <div style={el.fechaWrap}>
-            <span style={el.fechaText}>{fecha}</span>
-            <span style={el.horaText}>{hora}</span>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[12px] text-muted-foreground font-medium capitalize">{fecha}</span>
+            <span className="text-[13px] font-semibold">{hora}</span>
           </div>
         )}
       </div>
 
-      {/* Equipo visitante */}
-      <div style={{ ...el.equipo, justifyContent: "flex-end" }}>
-        <span style={pendiente(partido.visitante) ? el.equipoPendiente : el.equipoNombre}>
+      <div className="flex items-center justify-end gap-2">
+        <span className={pendiente(partido.visitante) ? "text-[13px] text-muted-foreground italic" : "text-sm font-semibold"}>
           {pendiente(partido.visitante) ? "Por definir" : partido.visitante}
         </span>
         {partido.banderaVisitante && !pendiente(partido.visitante) && (
-          <img src={partido.banderaVisitante} alt={partido.visitante} style={el.bandera}
+          <img src={partido.banderaVisitante} alt={partido.visitante}
+            className="w-7 h-5 object-cover rounded-sm border border-border shrink-0"
             onError={(e) => { e.target.style.display = "none"; }} />
         )}
       </div>
@@ -208,8 +214,8 @@ function Eliminatorias({ partidos }) {
 
   if (partidos.length === 0) {
     return (
-      <div style={styles.infoElim}>
-        <span style={{ fontSize: 20 }}>⏳</span>
+      <div className="flex gap-2.5 items-start bg-celeste-light border border-celeste rounded-[10px] px-3.5 py-2.5 mb-4 text-sm leading-relaxed">
+        <span className="text-xl">⏳</span>
         <span>Los cruces se definen cuando terminen los grupos. Volvé en junio de 2026.</span>
       </div>
     );
@@ -217,34 +223,34 @@ function Eliminatorias({ partidos }) {
 
   return (
     <div>
-      {/* Tabs de fases */}
-      <div style={el.faseTabs}>
+      <div className="flex gap-1 flex-wrap mb-4">
         {FASES_ELIM.map((f) => {
           const tiene = porFase[f.key].length > 0;
           return (
             <button
               key={f.key}
               onClick={() => setFaseActiva(f.key)}
-              style={{
-                ...el.faseTab,
-                ...(faseActiva === f.key ? el.faseTabActivo : {}),
-                ...(tiene ? {} : { opacity: 0.4 }),
-              }}
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-[1.5px] text-[13px] font-medium transition-all",
+                faseActiva === f.key
+                  ? "bg-gris-oscuro border-gris-oscuro text-white font-semibold"
+                  : "bg-background border-border text-muted-foreground",
+                !tiene && "opacity-40"
+              )}
             >
               {f.label}
-              {tiene && <span style={el.faseDot} />}
+              {tiene && <span className="w-1.5 h-1.5 rounded-full bg-success inline-block shrink-0" />}
             </button>
           );
         })}
       </div>
 
-      {/* Partidos de la fase */}
       {partidosFase.length === 0 ? (
-        <div style={styles.vacio}>
+        <div className="text-center py-8 px-4 text-sm text-muted-foreground">
           Los partidos de esta fase aún no están definidos
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="flex flex-col gap-2">
           {partidosFase.map((p) => (
             <CruceCard key={p._id} partido={p} />
           ))}
@@ -254,11 +260,13 @@ function Eliminatorias({ partidos }) {
   );
 }
 
+// ---------- página principal ----------
+
 export default function Fixture() {
-  const { partidos, cargando } = usePartidos();
+  const { partidos, cargando }              = usePartidos();
   const { posiciones, cargando: cargandoPos } = usePosiciones();
-  const [tab, setTab] = useState("fixture");
-  const [grupoActivo, setGrupoActivo] = useState("A");
+  const [tab, setTab]                       = useState("fixture");
+  const [grupoActivo, setGrupoActivo]       = useState("A");
 
   const gruposDisponibles = [
     ...new Set(
@@ -269,58 +277,60 @@ export default function Fixture() {
   ].sort();
   const grupos = gruposDisponibles.length > 0 ? gruposDisponibles : LETRAS;
 
-  const grupoKey = `Grupo ${grupoActivo}`;
-  const partidosGrupo = partidos
+  const grupoKey         = `Grupo ${grupoActivo}`;
+  const partidosGrupo    = partidos
     .filter((p) => p.grupo === grupoKey || p.ronda === grupoKey)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
   const eliminatoriaPartidos = partidos.filter(
     (p) => !p.grupo?.startsWith("Grupo") && !p.ronda?.startsWith("Grupo")
   );
 
   return (
     <div>
-      <h1 style={styles.titulo}>FIXTURE</h1>
+      <h1 className="font-display text-[36px] tracking-[2px] mb-4">FIXTURE</h1>
 
-      {/* Tabs principales */}
-      <div style={styles.mainTabs}>
-        {[
-          { key: "fixture", label: "Fixture" },
-          { key: "posiciones", label: "Posiciones" },
-          { key: "eliminatorias", label: "Eliminatorias" },
-        ].map((t) => (
+      {/* Tabs principales — estilo underline */}
+      <div className="flex border-b border-border mb-4">
+        {MAIN_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{ ...styles.mainTab, ...(tab === t.key ? styles.mainTabActivo : {}) }}
+            className={cn(
+              "px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-px",
+              tab === t.key
+                ? "text-foreground border-gris-oscuro font-semibold"
+                : "text-muted-foreground border-transparent"
+            )}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Selector de grupo (solo en fixture y posiciones) */}
       {tab !== "eliminatorias" && (
         <GrupoSelector grupos={grupos} activo={grupoActivo} onSelect={setGrupoActivo} />
       )}
 
-      {/* FIXTURE */}
       {tab === "fixture" && (
-        <div style={styles.card}>
-          <div style={styles.grupoLabel}>GRUPO {grupoActivo}</div>
+        <div className="bg-background border border-border rounded-lg px-5 py-4 shadow-sm">
+          <div className="text-[11px] font-bold text-muted-foreground tracking-[1.5px] uppercase mb-3">
+            GRUPO {grupoActivo}
+          </div>
           {cargando ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <div className="flex flex-col gap-0.5">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 52, borderRadius: 8 }} />
+                <div key={i} className="skeleton h-[52px] rounded-lg" />
               ))}
             </div>
           ) : partidosGrupo.length === 0 ? (
-            <div style={styles.vacio}>No hay partidos cargados todavía</div>
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              No hay partidos cargados todavía
+            </div>
           ) : (
-            <div style={styles.listaPartidos}>
+            <div>
               {partidosGrupo.map((p, i) => (
                 <div key={p._id}>
-                  {i > 0 && <div style={styles.divisor} />}
+                  {i > 0 && <div className="h-px bg-border -mx-1" />}
                   <FilaPartido partido={p} />
                 </div>
               ))}
@@ -329,321 +339,22 @@ export default function Fixture() {
         </div>
       )}
 
-      {/* POSICIONES */}
       {tab === "posiciones" && (
-        <div style={styles.card}>
-          <div style={styles.grupoLabel}>GRUPO {grupoActivo}</div>
+        <div className="bg-background border border-border rounded-lg px-5 py-4 shadow-sm">
+          <div className="text-[11px] font-bold text-muted-foreground tracking-[1.5px] uppercase mb-3">
+            GRUPO {grupoActivo}
+          </div>
           {cargandoPos ? (
-            <div className="skeleton" style={{ height: 200, borderRadius: 8 }} />
+            <div className="skeleton h-[200px] rounded-lg" />
           ) : (
             <TablaGrupo equipos={posiciones[grupoKey]} />
           )}
         </div>
       )}
 
-      {/* ELIMINATORIAS */}
       {tab === "eliminatorias" && (
         <Eliminatorias partidos={eliminatoriaPartidos} />
       )}
     </div>
   );
 }
-
-const styles = {
-  titulo: {
-    fontFamily: "var(--font-display)",
-    fontSize: 36,
-    letterSpacing: 2,
-    marginBottom: 16,
-  },
-  mainTabs: {
-    display: "flex",
-    gap: 4,
-    marginBottom: 16,
-    borderBottom: "1px solid var(--borde)",
-    paddingBottom: 0,
-  },
-  mainTab: {
-    background: "transparent",
-    border: "none",
-    borderBottom: "2px solid transparent",
-    color: "var(--texto-secundario)",
-    padding: "8px 16px",
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "var(--font-body)",
-    marginBottom: -1,
-    transition: "all 0.15s",
-  },
-  mainTabActivo: {
-    color: "var(--texto-principal)",
-    borderBottomColor: "var(--gris-oscuro)",
-    fontWeight: 600,
-  },
-  grupoSelector: {
-    display: "flex",
-    gap: 6,
-    flexWrap: "wrap",
-    marginBottom: 16,
-  },
-  grupoBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    border: "1.5px solid var(--borde)",
-    background: "var(--blanco)",
-    color: "var(--texto-secundario)",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.15s",
-  },
-  grupoBtnActivo: {
-    background: "var(--gris-oscuro)",
-    borderColor: "var(--gris-oscuro)",
-    color: "var(--blanco)",
-  },
-  card: {
-    background: "var(--blanco)",
-    border: "1px solid var(--borde)",
-    borderRadius: 12,
-    padding: "16px 20px",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  },
-  grupoLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "var(--texto-secundario)",
-    letterSpacing: 1.5,
-    marginBottom: 12,
-    textTransform: "uppercase",
-  },
-  listaPartidos: {},
-  divisor: { height: 1, background: "var(--borde)", margin: "0 -4px" },
-  filaPartido: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
-    alignItems: "center",
-    gap: 8,
-    padding: "10px 4px",
-  },
-  equipoLocal: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  equipoVisitante: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-  bandera: {
-    width: 28,
-    height: 20,
-    objectFit: "cover",
-    borderRadius: 2,
-    border: "1px solid var(--borde)",
-    flexShrink: 0,
-  },
-  nombreEquipo: {
-    fontSize: 14,
-    fontWeight: 500,
-    color: "var(--texto-principal)",
-  },
-  centroPartido: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 2,
-    minWidth: 80,
-  },
-  fechaHora: { display: "flex", flexDirection: "column", alignItems: "center" },
-  fechaTexto: {
-    fontSize: 13,
-    color: "var(--texto-secundario)",
-    fontWeight: 500,
-  },
-  horaTexto: { fontSize: 11, color: "var(--texto-secundario)" },
-  marcadorFinal: {
-    fontFamily: "var(--font-display)",
-    fontSize: 22,
-    display: "flex",
-    alignItems: "center",
-    color: "var(--texto-principal)",
-  },
-  badgeLive: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#ef4444",
-    animation: "pulse 1.5s infinite",
-  },
-  // Tabla posiciones
-  tablaWrapper: { overflowX: "auto", margin: "0 -4px" },
-  tabla: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
-  th: {
-    padding: "8px 10px",
-    textAlign: "center",
-    fontWeight: 600,
-    fontSize: 11,
-    color: "var(--texto-secundario)",
-    borderBottom: "1px solid var(--borde)",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  tr: { borderBottom: "1px solid var(--borde)" },
-  trClasifica: { background: "#f0fdf4" },
-  td: { padding: "10px 10px", textAlign: "center", color: "var(--texto-principal)" },
-  banderaTabla: {
-    width: 24,
-    height: 16,
-    objectFit: "cover",
-    borderRadius: 2,
-    border: "1px solid var(--borde)",
-    flexShrink: 0,
-  },
-  infoElim: {
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
-    background: "var(--celeste-light)",
-    border: "1px solid var(--celeste)",
-    borderRadius: 10,
-    padding: "10px 14px",
-    marginBottom: 16,
-    fontSize: 14,
-    color: "var(--texto-principal)",
-    lineHeight: 1.5,
-  },
-  vacio: {
-    textAlign: "center",
-    padding: "32px 16px",
-    color: "var(--texto-secundario)",
-    fontSize: 14,
-  },
-};
-
-const el = {
-  faseTabs: {
-    display: "flex",
-    gap: 4,
-    flexWrap: "wrap",
-    marginBottom: 16,
-  },
-  faseTab: {
-    background: "var(--blanco)",
-    border: "1.5px solid var(--borde)",
-    borderRadius: 20,
-    color: "var(--texto-secundario)",
-    padding: "6px 14px",
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "var(--font-body)",
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    transition: "all 0.15s",
-  },
-  faseTabActivo: {
-    background: "var(--gris-oscuro)",
-    borderColor: "var(--gris-oscuro)",
-    color: "var(--blanco)",
-    fontWeight: 600,
-  },
-  faseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: "50%",
-    background: "#22c55e",
-    display: "inline-block",
-    flexShrink: 0,
-  },
-  card: {
-    background: "var(--blanco)",
-    border: "1px solid var(--borde)",
-    borderRadius: 12,
-    padding: "12px 16px",
-    display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
-    alignItems: "center",
-    gap: 8,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-  },
-  equipo: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  bandera: {
-    width: 28,
-    height: 20,
-    objectFit: "cover",
-    borderRadius: 2,
-    border: "1px solid var(--borde)",
-    flexShrink: 0,
-  },
-  equipoNombre: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "var(--texto-principal)",
-  },
-  equipoPendiente: {
-    fontSize: 13,
-    fontWeight: 400,
-    color: "var(--texto-secundario)",
-    fontStyle: "italic",
-  },
-  centro: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 4,
-    minWidth: 90,
-  },
-  marcadorWrap: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 2,
-  },
-  marcador: {
-    fontFamily: "var(--font-display)",
-    fontSize: 22,
-    color: "var(--texto-principal)",
-  },
-  badgeFin: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "var(--texto-secundario)",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  badgeLive: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#ef4444",
-    animation: "pulse 1.5s infinite",
-  },
-  fechaWrap: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 1,
-  },
-  fechaText: {
-    fontSize: 12,
-    color: "var(--texto-secundario)",
-    fontWeight: 500,
-    textTransform: "capitalize",
-  },
-  horaText: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "var(--texto-principal)",
-  },
-};

@@ -33,7 +33,7 @@ export default function App() {
       });
   }, [isAuthenticated, user]);
 
-  if (isLoading || verificandoGrupo) return <Cargando />;
+  if (isLoading || verificandoGrupo || (isAuthenticated && !grupoVerificado)) return <Cargando />;
 
   const esAdmin = user?.email === "nikoagnello1@gmail.com";
 

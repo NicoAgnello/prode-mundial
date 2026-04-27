@@ -1,4 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
+  --radius: 0.75rem; /* = 12px, usado por shadcn */
   --celeste: #74acdf;
   --celeste-dark: #4a8fc7;
   --celeste-light: #e8f4fd;
